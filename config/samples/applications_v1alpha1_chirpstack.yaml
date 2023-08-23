@@ -65,7 +65,8 @@ spec:
               port: 1883
             json: true
             clientId:
-              mode: podname
+              mode: custom
+              customId: "test"
       regions:
         eu868:
           gateway:

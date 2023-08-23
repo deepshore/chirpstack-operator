@@ -85,6 +85,7 @@ spec:
                         type: integer
                   configuration:
                     type: object
+                    default: {}
                     properties:
                       chirpstack:
                         type: object

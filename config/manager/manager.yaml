@@ -70,7 +70,7 @@ spec:
         - --leader-elect
         - --leader-election-id=chirpstack-operator
         image: controller:latest
-        imagePullPolicy: Never
+        imagePullPolicy: IfNotPresent
         name: manager
         env:
         - name: ANSIBLE_GATHERING
@@ -97,9 +97,9 @@ spec:
         resources:
           limits:
             cpu: 500m
-            memory: 4Gi
+            memory: 768Mi
           requests:
             cpu: 10m
-            memory: 2Gi
+            memory: 256Mi
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10
