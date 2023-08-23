@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: "chirpstack-{{ ansible_operator_meta.name }}"
+  name: "chirpstack-{{ ansible_operator_meta.name }}"
+  namespace: "{{ ansible_operator_meta.namespace }}"
+spec:
+  selector:
+    matchLabels:
+      app: "chirpstack-{{ ansible_operator_meta.name }}"
+  serviceName: "chirpstack-{{ ansible_operator_meta.name }}"
+  replicas: {{ server.workload.replicas }}
+  template:
+    metadata:
+      labels:
+        app: "chirpstack-{{ ansible_operator_meta.name }}"
+    spec:
+      containers:
+      - name: chirpstack
+        image: {{ server.workload.image.registry }}/{{ server.workload.image.repository }}:{{ server.workload.image.tag }}
+        # command: ["/bin/sh", "-ec", "sleep infinity"]
+        args:
+        - "-c"
+        - "/etc/chirpstack"
+        env:
+        - name: CHIRPSTACK_SERVER_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        envFrom:
+        - secretRef:
+            name: "chirpstack-{{ ansible_operator_meta.name }}"
+        ports:
+        - containerPort: 8080
+          name: web
+        volumeMounts:
+        - name: configuration-chirpstack
+          mountPath: /etc/chirpstack/chirpstack.toml
+          subPath: chirpstack.toml
+        - name: configuration-regions
+          mountPath: /etc/chirpstack/region_eu433.toml
+          subPath: region_eu433.toml      
+        - name: configuration-regions
+          mountPath: /etc/chirpstack/region_eu868.toml
+          subPath: region_eu868.toml   
+{% for cert in certs_from_secrets_chirpstack %}
+{% if cert.secret %}
+        - name: {{ secret.volume }}
+          mountPath: /certs/{{ cert.path }}
+          subPath: {{ cert.path }}
+{% endif %}
+{% endfor %}
+{% for cert in certs_from_secrets_regions %}
+{% if cert.secret %}
+        - name: {{ secret.volume }}
+          mountPath: /certs/{{ cert.path }}
+          subPath: {{ cert.path }}
+{% endif %}
+{% endfor %}
+{% for plugin in server.configuration.chirpstack.network.adr_plugins %}
+        - name: {{ plugin.name }}
+          mountPath: /adr-plugins/{{ plugin.file }}
+          subPath: {{ plugin.file }}
+{% endfor %}
+      volumes: 
+      - name: configuration-chirpstack
+        configMap:
+          name: "{{ ansible_operator_meta.name }}-configuration-chirpstack"
+      - name: configuration-regions 
+        configMap:
+          name: "{{ ansible_operator_meta.name }}-configuration-regions"
+{% for cert in certs_from_secrets_chirpstack %}
+{% if cert.secret %}
+      - name: {{ secret.volume }}
+        secret:
+          secretName: {{ cert.secret }}
+          items:
+          - key: {{ cert.key }}
+            path: {{ cert.path }}
+{% endif %}
+{% endfor %}
+{% for cert in certs_from_secrets_regions %}
+{% if cert.secret %}
+      - name: {{ secret.volume }}
+        secret:
+          secretName: {{ cert.secret }}
+          items:
+          - key: {{ cert.key }}
+            path: {{ cert.path }}
+{% endif %}
+{% endfor %}
+{% for plugin in server.configuration.chirpstack.network.adr_plugins %}
+      - name: {{ plugin.name }}
+        configMap:
+          name: {{ plugin.config_map }}
+          items: 
+          - key: {{ plugin.file }}
+            path: {{ plugin.file }}
+{% endfor %}

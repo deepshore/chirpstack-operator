@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: "chirpstack-rest-api-{{ ansible_operator_meta.name }}"
+  name: "chirpstack-rest-api-{{ ansible_operator_meta.name }}"
+  namespace: "{{ ansible_operator_meta.namespace }}"
+spec:
+  replicas: {{ rest_api.workload.replicas }}
+  selector:
+    matchLabels:
+      app: "chirpstack-rest-api-{{ ansible_operator_meta.name }}"
+  template:
+    metadata:
+      labels:
+        app: "chirpstack-rest-api-{{ ansible_operator_meta.name }}"
+    spec:
+      containers:
+      - image: "{{ rest_api.workload.image.registry }}/{{ rest_api.workload.image.repository }}:{{ rest_api.workload.image.tag }}"
+        args:
+        - "--server"
+        - "chirpstack-{{ ansible_operator_meta.name }}:{{ server.service.port }}"
+        - "--bind"
+        - "0.0.0.0:8080"
+{% if rest_api.configuration.insecure %}
+        - "--insecure"
+{% endif %}
+        name: chirpstack-rest-api
+        ports:
+        - containerPort: 8080

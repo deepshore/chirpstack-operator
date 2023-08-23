@@ -1,0 +1,67 @@
+---
+# tasks file for Chirpstack
+- debug:
+    msg: Hello from the Chirpstack Operator.
+
+- name: Manage ENVs from Secrets 
+  include_tasks: manage_envs_from_secrets.yml
+
+- name: Manage Certs from Secrets 
+  include_tasks: manage_certs_from_secrets.yml 
+
+# - name: Manage PostgreSQL
+#   include_tasks: manage_postgresql.yml
+    
+# - debug:
+#     msg: Check connection to Redis. 
+
+- name: Manage configuration (Chirpstack)
+  kubernetes.core.k8s:
+    state: present
+    template: "templates/server/configuration.yaml.j2"
+  notify:
+    - "restart server pods" 
+
+- name: Manage configuration (Regions)
+  kubernetes.core.k8s:
+    state: present
+    template: "templates/server/configuration-regions.yaml.j2"   
+  notify:
+    - "restart server pods" 
+
+- name: Manage Service
+  kubernetes.core.k8s:
+    state: present
+    template: "templates/server/service.yaml.j2"
+
+- name: Manage ServiceAccount
+  kubernetes.core.k8s:
+    state: present
+    template: "templates/server/serviceaccount.yaml.j2"
+
+- name: Manage Statefulset
+  kubernetes.core.k8s:
+    state: present
+    template: "templates/server/statefulset.yaml.j2"
+  when: server.workload.type == "statefulset"
+
+- name: Manage Deployment
+  kubernetes.core.k8s:
+    state: present
+    template: "templates/server/deployment.yaml.j2"
+  when: server.workload.type == "deployment"
+
+- name: Manage Deployment (Rest-API)
+  kubernetes.core.k8s:
+    state: present
+    template: "templates/rest_api/deployment.yaml.j2"
+  when: rest_api.enabled
+  notify:
+    - "restart rest-api pods" 
+
+- name: Manage Service (Rest-API)
+  kubernetes.core.k8s:
+    state: present
+    template: "templates/rest_api/service.yaml.j2"
+  when: rest_api.enabled
+

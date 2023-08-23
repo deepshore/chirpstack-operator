@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: "chirpstack-rest-api-{{ ansible_operator_meta.name }}"
+  name: "chirpstack-rest-api-{{ ansible_operator_meta.name }}"
+  namespace: "{{ ansible_operator_meta.namespace }}"
+spec:
+  ports:
+  - name: web
+    port: {{ rest_api.service.port }}
+    protocol: TCP
+    targetPort: 8080
+{% if (rest_api.service.nodePort is defined) and (rest_api.service.type == "NodePort") %}
+    nodePort: {{ rest_api.service.nodePort }}
+{% endif %}
+  selector:
+    app: "chirpstack-rest-api-{{ ansible_operator_meta.name }}"
+  type: "{{ rest_api.service.type }}"

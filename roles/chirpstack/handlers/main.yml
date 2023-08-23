@@ -1,0 +1,15 @@
+---
+# handlers file for Chirpstack
+- name: Restart Statefulset (Server)
+  command: "kubectl rollout restart statefulset chirpstack-{{ ansible_operator_meta.name }} -n {{ ansible_operator_meta.namespace }}"
+  listen: "restart server pods"
+  when: server.workload.type == "statefulset"
+
+- name: Restart Deployment (Server)
+  command: "kubectl rollout restart deployment chirpstack-{{ ansible_operator_meta.name }} -n {{ ansible_operator_meta.namespace }}"
+  listen: "restart server pods"
+  when: server.workload.type == "deployment"
+
+- name: Restart Deployment (REST-API)
+  command: "kubectl rollout restart deployment chirpstack-rest-api-{{ ansible_operator_meta.name }} -n {{ ansible_operator_meta.namespace }}"
+  listen: "restart rest-api pods"
