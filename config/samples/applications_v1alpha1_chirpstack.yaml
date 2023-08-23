@@ -58,13 +58,14 @@ spec:
             - mqtt
           mqtt:
             qos: 1
-            clientId: "000001"
             eventTopic: "{% raw %}application/{{application_id}}/device/{{dev_eui}}/event/{{event}}{% endraw %}"
             server:
               scheme: tcp
               hostname: mosquitto
               port: 1883
             json: true
+            clientId:
+              mode: podname
       regions:
         eu868:
           gateway:
@@ -77,6 +78,8 @@ spec:
                   port: 1883
                 qos: 1
                 cleanSession: false 
+                clientId:
+                  mode: podname
   restApi:
     enabled: true
     
