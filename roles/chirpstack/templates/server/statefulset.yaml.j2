@@ -15,6 +15,17 @@ spec:
     metadata:
       labels:
         app: "chirpstack-{{ ansible_operator_meta.name }}"
+{% if server.workload.pod_labels is defined and server.workload.pod_labels|length > 0 %}
+{% for label in server.workload.pod_labels %}
+        "{{ label.key }}": "{{ label.value }}"
+{% endfor %}
+{% endif %}
+      annotations:
+{% if server.workload.pod_annotations is defined and server.workload.pod_annotations|length > 0 %}
+{% for annotation in server.workload.pod_annotations %}
+        "{{ annotation.key }}": "{{ annotation.value }}"
+{% endfor %}
+{% endif %}
     spec:
       containers:
       - name: chirpstack
