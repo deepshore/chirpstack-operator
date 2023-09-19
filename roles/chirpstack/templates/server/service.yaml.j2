@@ -11,8 +11,29 @@ spec:
   - port: {{ server.service.port }}
     protocol: TCP
     targetPort: 8080
-{% if (server.service.nodePort is defined) and (server.service.type == "NodePort") %}
-    nodePort: {{ server.service.nodePort }}
-{% endif %}   
+{% if (server.service.node_port is defined) and (server.service.type == "NodePort") %}
+    nodePort: {{ server.service.node_port }}
+{% endif %}
   selector:
     app: "chirpstack-{{ ansible_operator_meta.name }}"
+---
+{% if server.configuration.chirpstack.monitoring.enabled %}
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: "chirpstack-{{ ansible_operator_meta.name }}"
+  name: "chirpstack-{{ ansible_operator_meta.name }}-metrics"
+  namespace: "{{ ansible_operator_meta.namespace }}"
+spec:
+  type: ClusterIP
+{% if server.workload.replicas > 1 %}
+  clusterIP: None
+{% endif %}
+  ports:
+  - port: {{ server.configuration.chirpstack.monitoring.service.port }}
+    protocol: TCP
+    targetPort: {{ server.configuration.chirpstack.monitoring.service.target_port }}
+  selector:
+    app: "chirpstack-{{ ansible_operator_meta.name }}"
+{% endif %}

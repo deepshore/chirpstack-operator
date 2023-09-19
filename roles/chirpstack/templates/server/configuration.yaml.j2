@@ -270,10 +270,13 @@ data:
         # /health  - Returns 200 in case the healthchecks have passed.
         # /metrics - Returns metrics which can be scraped by Prometheus.
         #
-        # If not set, this endpoint will be disabled.
-        bind="{{ server.configuration.chirpstack.monitoring.bind }}"
+        # If not set, this endpoint will be disabled
+{% if server.configuration.chirpstack.monitoring.enabled %}
+        bind="0.0.0.0:{{ server.configuration.chirpstack.monitoring.service.target_port }}"
+{% else %}
+        bind=""
+{% endif %}
         
-    
         # Meta-log max history.
         #
         # This defines the max number of meta records that will be persisted in Redis Streams.

@@ -378,15 +378,21 @@ spec:
                             type: object 
                             default: {}
                             properties:
-                              bind:
-                                description: 'interface:port to bind the monitoring endpoint to (optional).
-                                  
-                                  /health  - Returns 200 in case the healthchecks have passed.
-                                  /metrics - Returns metrics which can be scraped by Prometheus.
-                                  
-                                  If not set, this endpoint will be disabled.'
-                                type: string
-                                default: ""
+                              enabled:
+                                type: boolean
+                                default: false
+                              service:
+                                type: object
+                                default: {}
+                                properties:
+                                  targetPort:
+                                    type: integer
+                                    default: 9090
+                                  port:
+                                    type: integer
+                                    default: 9090
+                                  nodePort:
+                                    type: integer
                               metaLogMaxHistory:
                                 description: 'This defines the max number of meta records that will be persisted in Redis Streams.
                                   Setting this value to 0 disables this feature.'

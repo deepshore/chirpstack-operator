@@ -59,6 +59,8 @@ spec:
         network:
           netId: "000000"
           enabledRegions: ["eu868"]
+        monitoring: 
+          enabled: true
         integration:
           enabled:
             - mqtt
