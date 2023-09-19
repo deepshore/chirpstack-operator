@@ -391,8 +391,6 @@ spec:
                                   port:
                                     type: integer
                                     default: 9090
-                                  nodePort:
-                                    type: integer
                               metaLogMaxHistory:
                                 description: 'This defines the max number of meta records that will be persisted in Redis Streams.
                                   Setting this value to 0 disables this feature.'
