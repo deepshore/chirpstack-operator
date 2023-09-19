@@ -16,6 +16,12 @@ spec:
         registry: docker.io
         repository: chirpstack/chirpstack
         tag: "4"
+      podAnnotations: 
+        - key: my-annotation-key
+          value: my-annotation-value
+      podLabels:
+        - key: my-label-key 
+          value: my-label-value
       replicas: 3
     service:
       port: 8080

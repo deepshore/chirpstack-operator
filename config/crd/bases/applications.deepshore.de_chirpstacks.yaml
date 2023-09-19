@@ -63,13 +63,23 @@ spec:
                         default: 1
                         minimum: 1
                       podAnnotations:
-                        type: object
-                        additionalProperties:
-                          type: string
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            key:
+                              type: string 
+                            value:
+                              type: string
                       podLabels:
-                        type: object
-                        additionalProperties:
-                          type: string               
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            key:
+                              type: string 
+                            value:
+                              type: string
                   service:
                     type: object
                     default: {}
