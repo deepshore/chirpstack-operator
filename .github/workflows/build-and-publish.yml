@@ -11,7 +11,7 @@ on:
 env:
   REGISTRY_URL: quay.io
   ORG: maltegroth
-  REPO: workflows-demo-operator
+  REPO: chirpstack-operator
 
 jobs:
   build-and-publish:
