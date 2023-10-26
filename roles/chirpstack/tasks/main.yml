@@ -3,11 +3,8 @@
 - debug:
     msg: Hello from the Chirpstack Operator.
 
-- name: Manage ENVs from Secrets 
-  include_tasks: manage_envs_from_secrets.yml
-
-- name: Manage Certs from Secrets 
-  include_tasks: manage_certs_from_secrets.yml 
+- name: Manage Secrets
+  include_tasks: secrets/main.yml
 
 # - name: Manage PostgreSQL
 #   include_tasks: manage_postgresql.yml

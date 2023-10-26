@@ -1019,6 +1019,16 @@ spec:
             description: Status defines the observed state of Chirpstack
             type: object
             x-kubernetes-preserve-unknown-fields: true
+            properties: 
+              secrets:
+                type: object
+                properties:
+                  status: 
+                    type: string
+                    enum: ["Processing","Error","Done"]
+                  message:
+                    type: string 
+                    default: ""
         type: object
     served: true
     storage: true
