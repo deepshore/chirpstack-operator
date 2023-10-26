@@ -39,6 +39,10 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
+{% for env in server.workload.extra_env_vars %}
+        - name: {{ env.name }}
+          value: {{ env.value }}
+{% endfor %}
         envFrom:
         - secretRef:
             name: "chirpstack-{{ ansible_operator_meta.name }}"

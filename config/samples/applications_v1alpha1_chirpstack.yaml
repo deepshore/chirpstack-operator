@@ -22,6 +22,9 @@ spec:
       podLabels:
         - key: my-label-key 
           value: my-label-value
+      extraEnvVars:
+        - name: TEST_NAME
+          value: testvalue
       replicas: 3
     service:
       port: 8080

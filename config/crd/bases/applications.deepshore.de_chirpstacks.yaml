@@ -80,6 +80,15 @@ spec:
                               type: string 
                             value:
                               type: string
+                      extraEnvVars:
+                        type: array 
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            value: 
+                              type: string
                   service:
                     type: object
                     default: {}
