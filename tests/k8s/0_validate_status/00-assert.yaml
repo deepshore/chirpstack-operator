@@ -1,0 +1,7 @@
+apiVersion: applications.deepshore.de/v1alpha1
+kind: Chirpstack
+metadata:
+  name: test
+status:
+  secrets:
+    status: Done

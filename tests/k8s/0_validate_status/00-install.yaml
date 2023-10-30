@@ -1,0 +1,97 @@
+apiVersion: applications.deepshore.de/v1alpha1
+kind: Chirpstack
+metadata:
+  labels:
+    app.kubernetes.io/name: chirpstack
+    app.kubernetes.io/instance: test
+    app.kubernetes.io/part-of: chirpstack-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: chirpstack-operator
+  name: test
+spec:
+  server:
+    workload:
+      type: statefulset 
+      image:
+        registry: docker.io
+        repository: chirpstack/chirpstack
+        tag: "4"
+      podAnnotations: 
+        - key: my-annotation-key
+          value: my-annotation-value
+      podLabels:
+        - key: my-label-key 
+          value: my-label-value
+      extraEnvVars:
+        - name: TEST_NAME
+          value: testvalue
+      replicas: 1
+    service:
+      port: 8080
+    configuration:
+      chirpstack: 
+        logging:
+          level: debug
+        postgresql:
+          dbOperations:
+            enabled: true
+            postgresPassword:
+              secret: postgres-password
+              key: password
+          dsn:
+            hostname: postgres
+            database: chirpstack
+            username:
+              secret: postgres
+              key: username 
+            password:
+              secret: postgres
+              key: password
+            sslMode: disable
+          maxOpenConnections: 1
+          minIdleConnections: 0
+        redis:
+          servers: [
+            "redis:6379"
+          ]
+          cluster: false
+          tlsEnabled: false 
+          keyPrefix: ""
+          maxOpenConnections: 10
+          minIdleConnections: 0
+        network:
+          netId: "000000"
+          enabledRegions: ["eu868"]
+        monitoring: 
+          enabled: true
+        integration:
+          enabled:
+            - mqtt
+          mqtt:
+            qos: 1
+            eventTopic: "{% raw %}application/{{application_id}}/device/{{dev_eui}}/event/{{event}}{% endraw %}"
+            server:
+              scheme: tcp
+              hostname: mosquitto
+              port: 1883
+            json: true
+            clientId:
+              mode: custom
+              customId: "test"
+      regions:
+        eu868:
+          gateway:
+            forceGwsPrivate: false
+            backend: 
+              mqtt:
+                server:
+                  scheme: tcp
+                  hostname: mosquitto
+                  port: 1883
+                qos: 1
+                cleanSession: false 
+                clientId:
+                  mode: podname
+  restApi:
+    enabled: true
+    
