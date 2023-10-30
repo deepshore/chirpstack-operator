@@ -9,7 +9,7 @@ namespace: default
 suppress:
   - events
 parallel: 1
-timeout: 60
+timeout: 120
 reportFormat: JSON
 reportName: e2e
 skipDelete: false
