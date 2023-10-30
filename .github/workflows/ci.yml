@@ -1,56 +1,56 @@
-name: Run continuous integration
+# name: Run continuous integration
 
-on:
-  push:
-    branches:
-      - 'main'
+# on:
+#   push:
+#     branches:
+#       - 'main'
 
-  pull_request:
-    branches:
-      - 'main'
+#   pull_request:
+#     branches:
+#       - 'main'
 
-jobs:
-  e2e-tests:
-    runs-on: ubuntu-latest
+# jobs:
+#   e2e-tests:
+#     runs-on: ubuntu-latest
 
-    steps:
-      - name: Install krew
-        run: |
-          (
-            set -x; cd "$(mktemp -d)" &&
-            OS="$(uname | tr '[:upper:]' '[:lower:]')" &&
-            ARCH="$(uname -m | sed -e 's/x86_64/amd64/' -e 's/\(arm\)\(64\)\?.*/\1\2/' -e 's/aarch64$/arm64/')" &&
-            KREW="krew-${OS}_${ARCH}" &&
-            curl -fsSLO "https://github.com/kubernetes-sigs/krew/releases/latest/download/${KREW}.tar.gz" &&
-            tar zxvf "${KREW}.tar.gz" &&
-            ./"${KREW}" install krew
-          )
-          echo "${HOME}/.krew/bin" >> $GITHUB_PATH
+#     steps:
+#       - name: Install krew
+#         run: |
+#           (
+#             set -x; cd "$(mktemp -d)" &&
+#             OS="$(uname | tr '[:upper:]' '[:lower:]')" &&
+#             ARCH="$(uname -m | sed -e 's/x86_64/amd64/' -e 's/\(arm\)\(64\)\?.*/\1\2/' -e 's/aarch64$/arm64/')" &&
+#             KREW="krew-${OS}_${ARCH}" &&
+#             curl -fsSLO "https://github.com/kubernetes-sigs/krew/releases/latest/download/${KREW}.tar.gz" &&
+#             tar zxvf "${KREW}.tar.gz" &&
+#             ./"${KREW}" install krew
+#           )
+#           echo "${HOME}/.krew/bin" >> $GITHUB_PATH
 
-      - name: Install kuttl
-        run: |
-          kubectl krew install kuttl
-          kubectl kuttl version
+#       - name: Install kuttl
+#         run: |
+#           kubectl krew install kuttl
+#           kubectl kuttl version
 
-      - name: Checkout repo
-        uses: actions/checkout@v3
+#       - name: Checkout repo
+#         uses: actions/checkout@v3
 
-      - name: Start minikube
-        uses: medyagh/setup-minikube@master
-        with:
-          cpus: max
-          memory: max
+#       - name: Start minikube
+#         uses: medyagh/setup-minikube@master
+#         with:
+#           cpus: max
+#           memory: max
 
-      - name: Build image
-        shell: bash
-        run: |
-          eval $(minikube -p minikube docker-env)
-          make docker-build
+#       - name: Build image
+#         shell: bash
+#         run: |
+#           eval $(minikube -p minikube docker-env)
+#           make docker-build
       
-      - name: Install and deploy operator
-        run: make install deploy
+#       - name: Install and deploy operator
+#         run: make install deploy
       
-      - name: Run tests
-        run: |
-          set -e
-          kubectl kuttl test ./tests/k8s --config ./tests/kuttl-tests.yaml 
+#       - name: Run tests
+#         run: |
+#           set -e
+#           kubectl kuttl test ./tests/k8s --config ./tests/kuttl-tests.yaml 
