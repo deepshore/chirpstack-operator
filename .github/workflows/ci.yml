@@ -37,6 +37,9 @@ jobs:
 
       - name: Start minikube
         uses: medyagh/setup-minikube@master
+        with:
+          cpus: max
+          memory: max
 
       - name: Build image
         shell: bash
