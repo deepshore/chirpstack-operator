@@ -12,7 +12,7 @@ on:
 env:
   REGISTRY_URL: quay.io
   ORG: maltegroth
-  REPO: chirpstack-operator
+  REPO_IMAGE: chirpstack-operator
 
 jobs:
   build-operator:
