@@ -11,7 +11,7 @@ on:
 env:
   REGISTRY_URL: quay.io
   ORG: maltegroth
-  REPO: chirpstack-operator
+  REPO_IMAGE: chirpstack-operator
   REPO_BUNDLE_IMAGE: chirpstack-operator-bundle
   OPERATOR_SDK_DL_URL: https://github.com/operator-framework/operator-sdk/releases/download/v1.32.0
   OPERATOR_SDK_CHECKSUM: "39f3d31529c49906bec8e1e3c017f536ad13faa994f02288782d9742452d4a65"
