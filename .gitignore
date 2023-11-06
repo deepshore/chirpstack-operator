@@ -16,5 +16,4 @@ bin
 # custom
 v3/
 private/
-chirpstack/
 operator-sdk/
