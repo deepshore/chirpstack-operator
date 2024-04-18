@@ -639,6 +639,15 @@ spec:
                             type: object
                             default: {}
                             properties:
+                              enabled:
+                                description: 'Enabled authentication backend.
+                                  Options are:
+                                   * internal       - Internal authentication backend (default).
+                                   * openid_connect - OpenID Connect based backend.
+                                   * oauth2         - OAuth2 based backend.'
+                                type: string 
+                                enum: ["internal","openid_connect","oauth2"]
+                                default: "internal"
                               openidConnect:
                                 description: OpenID Connect.
                                 type: object
