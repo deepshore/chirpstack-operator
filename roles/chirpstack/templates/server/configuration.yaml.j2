@@ -622,7 +622,9 @@ data:
                 #
                 # The login label is used in the web-interface login form.
                 login_label="{{ server.configuration.chirpstack.user_authentication.openid_connect.login_label }}"
-        
+
+                # Custom 
+                additional_scopes=["chirpstack",]
     
     # Join Server configuration.
     [join_server]
