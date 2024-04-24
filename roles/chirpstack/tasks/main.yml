@@ -1,7 +1,7 @@
 ---
 # tasks file for Chirpstack
 - debug:
-    msg: Hello from the Chirpstack Operator.
+    msg: Hello from the Chirpstack Operator v0.0.5.
 
 - name: Manage Secrets
   include_tasks: secrets/main.yml
