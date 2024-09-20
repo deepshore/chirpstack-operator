@@ -706,6 +706,18 @@ spec:
                                     description: The login label is used in the web-interface login form.
                                     type: string
                                     default: ""
+                                  assumeEmailVerified:
+                                    description: 'If set to true, then ChirpStack will ignore the email_verified received 
+                                      from the OpenID Connect provider, assuming it will be true. Some
+                                      providers do not provide this field, in which case setting this value is needed.'
+                                    type: boolean
+                                    default: false
+                                  scopes:
+                                    description: 'This configures the scopes that are used during login. You must at least define "email" and "profile".'
+                                    type: array
+                                    items:
+                                      type: string
+                                    default: ["email","profile"]
                           backendInterfaces:
                             description: Backend Interfaces configuration (optional).
                             type: object
