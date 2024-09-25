@@ -17,3 +17,9 @@ bin
 v3/
 private/
 operator-sdk/
+
+# catalog
+catalog/
+
+# ansible
+collections/
