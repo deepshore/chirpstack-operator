@@ -622,7 +622,7 @@ data:
                 #
                 # If set to true, then ChirpStack will immediately redirect to the OAuth2
                 # provider for login.
-                login_redirect={{ user_authentication.openid_connect.login_redirect }}
+                login_redirect={{ user_authentication.openid_connect.login_redirect | lower }}
                 
                 # Login label.
                 #
