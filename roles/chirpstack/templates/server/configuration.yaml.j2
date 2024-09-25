@@ -617,12 +617,35 @@ data:
                 # When set, ChirpStack Application Server will redirect to this URL instead
                 # of redirecting to the login page.
                 logout_url="{{ server.configuration.chirpstack.user_authentication.openid_connect.logout_url }}"
-        
+                
+                ## Login redirect.
+                #
+                # If set to true, then ChirpStack will immediately redirect to the OAuth2
+                # provider for login.
+                login_redirect={{ user_authentication.openid_connect.login_redirect | lower }}
+                
                 # Login label.
                 #
                 # The login label is used in the web-interface login form.
                 login_label="{{ server.configuration.chirpstack.user_authentication.openid_connect.login_label }}"
-        
+
+                # Assume e-mail verified.
+                #
+                # If set to true, then ChirpStack will ignore the email_verified received
+                # from the OpenID Connect provider, assuming it will be true. Some
+                # providers do not provide this field, in which case setting this value
+                # is needed.
+                assume_email_verified={{ server.configuration.chirpstack.user_authentication.openid_connect.assume_email_verified | lower }}
+            
+                # Scopes.
+                #
+                # This configures the scopes that are used during login. You must at least define
+                # "email" and "profile".
+                scopes=[
+{% for scope in server.configuration.chirpstack.user_authentication.openid_connect.scopes %}
+                        "{{ scope }}",
+{% endfor %}
+                ]
     
     # Join Server configuration.
     [join_server]
