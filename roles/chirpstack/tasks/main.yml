@@ -1,7 +1,7 @@
 ---
 # tasks file for Chirpstack
 - debug:
-    msg: Hello from the Chirpstack Operator.
+    msg: "Hello from the Chirpstack Operator: '{{ ansible_operator_meta }}'"
 
 # - name: Manage PostgreSQL
 #   include_tasks: manage_postgresql.yml
@@ -9,39 +9,5 @@
 # - debug:
 #     msg: Check connection to Redis.
 
-- name: Manage Service
-  kubernetes.core.k8s:
-    state: present
-    template: "templates/server/service.yaml.j2"
-
-- name: Manage ServiceAccount
-  kubernetes.core.k8s:
-    state: present
-    template: "templates/server/serviceaccount.yaml.j2"
-
-- name: Manage Statefulset
-  kubernetes.core.k8s:
-    state: present
-    template: "templates/server/statefulset.yaml.j2"
-  when: server.workload.type == "statefulset"
-
-- name: Manage Deployment
-  kubernetes.core.k8s:
-    state: present
-    template: "templates/server/deployment.yaml.j2"
-  when: server.workload.type == "deployment"
-
-- name: Manage Deployment (Rest-API)
-  kubernetes.core.k8s:
-    state: present
-    template: "templates/rest_api/deployment.yaml.j2"
-  when: rest_api.enabled
-  notify:
-    - "restart rest-api pods"
-
-- name: Manage Service (Rest-API)
-  kubernetes.core.k8s:
-    state: present
-    template: "templates/rest_api/service.yaml.j2"
-  when: rest_api.enabled
-
+- name: Check for necessary reconciliation
+  include_tasks: reconcile/main.yml

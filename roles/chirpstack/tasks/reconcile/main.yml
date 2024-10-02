@@ -1,0 +1,163 @@
+- operator_sdk.util.k8s_status:
+    api_version: applications.deepshore.de/v1alpha1
+    kind: Chirpstack
+    name: "{{ ansible_operator_meta.name }}"
+    namespace: "{{ ansible_operator_meta.namespace }}"
+    status:
+      reconciliation:
+        checking:
+          status: "Processing"
+        reconciling:
+          status: "Pending"
+
+- name: Initialize variables
+  set_fact:
+    is_reconciled: True
+    updated_configmaps_status: {}
+    updated_secrets_status: {}
+    updated_certificates_status: {}
+
+- name: Check the current status
+  block:
+    - k8s_info:
+        api_version: applications.deepshore.de/v1alpha1
+        kind: Chirpstack
+        name: "{{ ansible_operator_meta.name }}"
+        namespace: "{{ ansible_operator_meta.namespace }}"
+      register: cr_info
+    - debug:
+        msg: "cr_info: '{{ cr_info }}'"
+    - set_fact:
+        current_status: >-
+          {{
+            cr_info.resources[0].status.previousState
+          }}
+    - debug:
+        msg: "current_status: '{{ current_status }}'"
+    - set_fact:
+        is_reconciled: "{{ not cr_info.changed }}"
+    - set_fact:
+        is_initial_run: -<
+          {{
+            not (
+              (current_status.configmaps is defined) and
+              (current_status.secrets is defined) and
+              (current_status.certificates is defined)
+            )
+          }}
+
+- name: Check ConfigMaps
+  block:
+    - name: Initialize variables
+      set_fact:
+        updated_configmaps_status: {}
+    - name: Set list of ConfigMaps to monitor
+      set_fact:
+        configmap_names: >-
+          {{
+            [ server.configuration.config_files.config_map_name ] +
+            ([ server.configuration.adr_plugin_files.config_map_name ] if server.configuration.adr_plugin_files is defined else [])
+          }}
+
+    - name: Process each ConfigMap
+      vars:
+        namespace: "{{ ansible_operator_meta.namespace }}"
+      loop: "{{ configmap_names }}"
+      loop_control:
+        loop_var: configmap_name
+      include_tasks: process_config_map.yml
+
+    - operator_sdk.util.k8s_status:
+        api_version: applications.deepshore.de/v1alpha1
+        kind: Chirpstack
+        name: "{{ ansible_operator_meta.name }}"
+        namespace: "{{ ansible_operator_meta.namespace }}"
+        status:
+          previousState:
+            configmaps: "{{ updated_configmaps_status }}"
+
+- name: Check Secrets
+  block:
+    - name: Process each Secret
+      vars:
+        namespace: "{{ ansible_operator_meta.namespace }}"
+      loop: "{{ server.configuration.env_secrets }}"
+      loop_control:
+        loop_var: secret_name
+      include_tasks: process_env_secret.yml
+
+    - operator_sdk.util.k8s_status:
+        api_version: applications.deepshore.de/v1alpha1
+        kind: Chirpstack
+        name: "{{ ansible_operator_meta.name }}"
+        namespace: "{{ ansible_operator_meta.namespace }}"
+        status:
+          previousState:
+            secrets: "{{ updated_secrets_status }}"
+
+- name: Check Certificates
+  block:
+    - name: Process each certificate
+      vars:
+        namespace: "{{ ansible_operator_meta.namespace }}"
+      loop: "{{ server.configuration.certificates }}"
+      loop_control:
+        loop_var: certificate
+      include_tasks: process_certificate.yml
+
+    - operator_sdk.util.k8s_status:
+        api_version: applications.deepshore.de/v1alpha1
+        kind: Chirpstack
+        name: "{{ ansible_operator_meta.name }}"
+        namespace: "{{ ansible_operator_meta.namespace }}"
+        status:
+          previousState:
+            certificates: "{{ updated_certificates_status }}"
+
+- operator_sdk.util.k8s_status:
+    api_version: applications.deepshore.de/v1alpha1
+    kind: Chirpstack
+    name: "{{ ansible_operator_meta.name }}"
+    namespace: "{{ ansible_operator_meta.namespace }}"
+    status:
+      reconciliation:
+        checking:
+          status: "Done"
+
+- name: Notify on changes
+  when: not is_reconciled
+  debug:
+    msg: "Needs reconciliation, notifying"
+  changed_when: True
+  notify: needs reconciliation
+
+- name: Update reconciliation status
+  when: not is_reconciled
+  operator_sdk.util.k8s_status:
+    api_version: applications.deepshore.de/v1alpha1
+    kind: Chirpstack
+    name: "{{ ansible_operator_meta.name }}"
+    namespace: "{{ ansible_operator_meta.namespace }}"
+    status:
+      reconciliation:
+        reconciling:
+          status: "Notified"
+
+- debug:
+    msg: "Updating with: updated_configmaps_status: '{{ updated_configmaps_status }}'"
+
+- debug:
+    msg: "Updating with: updated_secrets_status: '{{ updated_secrets_status }}'"
+
+- debug:
+    msg: "Updating with: updated_certificates_status: '{{ updated_certificates_status }}'"
+
+- operator_sdk.util.k8s_status:
+    api_version: applications.deepshore.de/v1alpha1
+    kind: Chirpstack
+    name: "{{ ansible_operator_meta.name }}"
+    namespace: "{{ ansible_operator_meta.namespace }}"
+    status:
+      reconciliation:
+        checking:
+          status: "Done"

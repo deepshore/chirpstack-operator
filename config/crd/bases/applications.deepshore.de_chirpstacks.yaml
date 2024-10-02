@@ -200,15 +200,40 @@ spec:
             type: object
             x-kubernetes-preserve-unknown-fields: true
             properties:
-              secrets:
+              previousState:
+                type: object
+                default: {}
+                properties:
+                  configmaps:
+                    type: object
+                    additionalProperties: true
+                  secrets:
+                    type: object
+                    additionalProperties: true
+                  certificates:
+                    type: object
+                    additionalProperties: true
+              reconciliation:
                 type: object
                 properties:
-                  status:
-                    type: string
-                    enum: ["Processing","Error","Done"]
-                  message:
-                    type: string
-                    default: ""
+                  checking:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        enum: ["Processing","Error","Done"]
+                      message:
+                        type: string
+                        default: ""
+                  reconciling:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        enum: ["Pending","Notified","Processing","Error","Done"]
+                      message:
+                        type: string
+                        default: ""
         type: object
     served: true
     storage: true

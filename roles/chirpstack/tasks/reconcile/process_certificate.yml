@@ -1,0 +1,41 @@
+- name: Get current Secret data
+  k8s_info:
+    api_version: v1
+    kind: Secret
+    name: "{{ certificate.secret_name }}"
+    namespace: "{{ namespace }}"
+  register: current_secret
+
+- name: Extract current Secret data
+  set_fact:
+    current_secret_data: >-
+      {{
+        {
+          certificate.secret_name: (current_secret.resources[0].data | default({}))
+        } | to_json | password_hash(salt="123")
+      }}
+
+- name: Get last known Secret data from CR status
+  set_fact:
+    last_secret_data: "{{ current_status.certificates[certificate.name] | default({}) }}"
+
+- name: Check for changes
+  set_fact:
+    secret_changed: "{{ current_secret_data != last_secret_data }}"
+
+- name: Set is_reconciled to False
+  when: secret_changed
+  set_fact:
+    is_reconciled: False
+
+- name: Debug Certificate change
+  when: secret_changed
+  debug:
+    msg: "Certificate '{{ certificate.name }}' has changed."
+
+- name: Update accumulated certificates status
+  set_fact:
+    updated_certificates_status: >-
+      {{
+        updated_certificates_status | combine({ certificate.name:  current_secret_data })
+      }}

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: chirpstack-cert-1
+data:
+  key: Zm9v
+  crt: YmFy
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: chirpstack-cert-2
+data:
+  key: YmF6
+  crt: bG9s

@@ -125,6 +125,7 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 
 .PHONY: redeploy
 redeploy: undeploy deploy
+	kubectl apply -k config/samples
 
 .PHONY: clean
 clean: undeploy

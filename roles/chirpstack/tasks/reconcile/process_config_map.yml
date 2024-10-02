@@ -1,0 +1,49 @@
+- name: Get current ConfigMap data
+  k8s_info:
+    api_version: v1
+    kind: ConfigMap
+    name: "{{ configmap_name }}"
+    namespace: "{{ namespace }}"
+  register: current_configmap
+
+- name: Check if ConfigMap exists
+  set_fact:
+    configmap_exists: "{{ current_configmap.resources | length > 0 }}"
+
+- name: Extract current ConfigMap data
+  when: configmap_exists
+  set_fact:
+    current_configmap_data: >-
+      {{
+        current_configmap.resources[0].data | default({}) | to_json | hash
+      }}
+
+- name: Handle missing ConfigMap
+  when: not configmap_exists
+  set_fact:
+    current_configmap_data: {}
+
+- name: Get last known ConfigMap data from CR status
+  set_fact:
+    last_configmap_data: "{{ current_status.configmaps[configmap_name] | default({}) }}"
+
+- name: Check for changes
+  set_fact:
+    configmap_changed: "{{ current_configmap_data != last_configmap_data }}"
+
+- name: Set is_reconciled to False
+  when: configmap_changed
+  set_fact:
+    is_reconciled: False
+
+- name: Debug ConfigMap change
+  when: configmap_changed
+  debug:
+    msg: "ConfigMap '{{ configmap_name }}' has changed."
+
+- name: Update the accumulated ConfigMaps status
+  set_fact:
+    updated_configmaps_status: >-
+      {{
+        updated_configmaps_status | combine({ configmap_name: current_configmap_data })
+      }}

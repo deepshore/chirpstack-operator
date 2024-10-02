@@ -1,0 +1,94 @@
+- operator_sdk.util.k8s_status:
+    api_version: applications.deepshore.de/v1alpha1
+    kind: Chirpstack
+    name: "{{ ansible_operator_meta.name }}"
+    namespace: "{{ ansible_operator_meta.namespace }}"
+    status:
+      reconciliation:
+        reconciling:
+          status: "Processing"
+
+
+- name: Manage Service (Rest-API)
+  kubernetes.core.k8s:
+    state: absent
+    template: "templates/rest_api/service.yaml.j2"
+  when: rest_api.enabled
+
+- name: Manage Deployment (Rest-API)
+  kubernetes.core.k8s:
+    state: absent
+    template: "templates/rest_api/deployment.yaml.j2"
+  when: rest_api.enabled
+  notify:
+    - "restart rest-api pods"
+
+- name: Manage Deployment
+  kubernetes.core.k8s:
+    state: absent
+    template: "templates/server/deployment.yaml.j2"
+  when: server.workload.type == "deployment"
+
+- name: Manage Statefulset
+  kubernetes.core.k8s:
+    state: absent
+    template: "templates/server/statefulset.yaml.j2"
+  when: server.workload.type == "statefulset"
+
+- name: Manage ServiceAccount
+  kubernetes.core.k8s:
+    state: absent
+    template: "templates/server/serviceaccount.yaml.j2"
+
+- name: Manage Service
+  kubernetes.core.k8s:
+    state: absent
+    template: "templates/server/service.yaml.j2"
+
+
+- name: Manage Service
+  kubernetes.core.k8s:
+    state: present
+    template: "templates/server/service.yaml.j2"
+
+- name: Manage ServiceAccount
+  kubernetes.core.k8s:
+    state: present
+    template: "templates/server/serviceaccount.yaml.j2"
+
+- name: Manage Statefulset
+  kubernetes.core.k8s:
+    state: present
+    template: "templates/server/statefulset.yaml.j2"
+  when: server.workload.type == "statefulset"
+
+- name: Manage Deployment
+  kubernetes.core.k8s:
+    state: present
+    template: "templates/server/deployment.yaml.j2"
+  when: server.workload.type == "deployment"
+
+- name: Manage Deployment (Rest-API)
+  kubernetes.core.k8s:
+    state: present
+    template: "templates/rest_api/deployment.yaml.j2"
+  when: rest_api.enabled
+  notify:
+    - "restart rest-api pods"
+
+- name: Manage Service (Rest-API)
+  kubernetes.core.k8s:
+    state: present
+    template: "templates/rest_api/service.yaml.j2"
+  when: rest_api.enabled
+
+
+- operator_sdk.util.k8s_status:
+    api_version: applications.deepshore.de/v1alpha1
+    kind: Chirpstack
+    name: "{{ ansible_operator_meta.name }}"
+    namespace: "{{ ansible_operator_meta.namespace }}"
+    status:
+      reconciliation:
+        reconciling:
+          status: "Done"

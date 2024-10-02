@@ -13,3 +13,7 @@
 - name: Restart Deployment (REST-API)
   command: "kubectl rollout restart deployment chirpstack-rest-api-{{ ansible_operator_meta.name }} -n {{ ansible_operator_meta.namespace }}"
   listen: "restart rest-api pods"
+
+- name: Reconcile
+  include_tasks: handlers/reconcile.yml
+  listen: "needs reconciliation"
