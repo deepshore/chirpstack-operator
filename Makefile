@@ -199,6 +199,11 @@ BUNDLE_IMGS ?= $(BUNDLE_IMG)
 # The image tag given to the resulting catalog image (e.g. make catalog-build CATALOG_IMG=example.com/operator-catalog:v0.2.0).
 CATALOG_IMG ?= $(IMAGE_TAG_BASE)-catalog:v$(VERSION)
 
+CATALOG_NAME ?= catalog
+CATALOG_DIR ?= $(CATALOG_NAME)
+CATALOG_FILE ?= $(CATALOG_NAME).yaml
+CATALOG_TEMPLATE_FILE ?= $(CATALOG_NAME)-template.yaml
+
 # Set CATALOG_BASE_IMG to an existing catalog image tag to add $BUNDLE_IMGS to that image.
 ifneq ($(origin CATALOG_BASE_IMG), undefined)
 FROM_INDEX_OPT := --from-index $(CATALOG_BASE_IMG)
@@ -208,10 +213,21 @@ endif
 # This recipe invokes 'opm' in 'semver' bundle add mode. For more information on add modes, see:
 # https://github.com/operator-framework/community-operators/blob/7f1438c/docs/packaging-operator.md#updating-your-existing-operator
 .PHONY: catalog-build
-catalog-build: opm ## Build a catalog image.
-	$(OPM) index add --container-tool docker --mode semver --tag $(CATALOG_IMG) --bundles $(BUNDLE_IMGS) $(FROM_INDEX_OPT)
+catalog-build: 
+	docker build . -f ${CATALOG_NAME}.Dockerfile -t ${CATALOG_IMG}
 
 # Push the catalog image.
 .PHONY: catalog-push
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
+
+# Create Dockerfile for the catalog
+.PHONY: catalog-dockerfile 
+catalog-dockerfile: opm
+	$(OPM) generate dockerfile ${CATALOG_DIR}
+
+# Render and validate catalog template
+.PHONY: catalog-file
+catalog-file: opm
+	$(OPM) alpha render-template semver -o yaml < ${CATALOG_TEMPLATE_FILE} > ${CATALOG_DIR}/${CATALOG_FILE}
+	($(OPM) validate ${CATALOG_DIR}) || (echo "Validation failed"; exit 1)

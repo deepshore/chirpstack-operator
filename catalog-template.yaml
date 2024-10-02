@@ -1,0 +1,12 @@
+Schema: olm.semver
+GenerateMajorChannels: true
+GenerateMinorChannels: false
+Stable:
+  Bundles:
+  - Image: quay.io/maltegroth/chirpstack-operator-bundle:v0.0.8
+Fast:
+  Bundles:
+  - Image: quay.io/maltegroth/chirpstack-operator-bundle:v0.0.8
+Candidate:
+  Bundles:
+  - Image: quay.io/maltegroth/chirpstack-operator-bundle:v0.0.8
