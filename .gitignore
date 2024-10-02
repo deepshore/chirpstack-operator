@@ -17,3 +17,4 @@ bin
 v3/
 private/
 operator-sdk/
+.build-state/

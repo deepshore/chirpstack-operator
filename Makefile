@@ -77,8 +77,10 @@ run: ansible-operator ## Run against the configured Kubernetes cluster in ~/.kub
 	$(ANSIBLE_OPERATOR) run
 
 .PHONY: docker-build
-docker-build: ## Build docker image with the manager.
-	docker build -t ${IMG} .
+## Build docker image with the manager.
+docker-build: .build-state/docker-build
+.build-state/docker-build: watches.yaml $(shell find roles -type f) $(shell find playbooks -type f)
+	docker build -t ${IMG} . && mkdir -p .build-state && touch $@
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
@@ -112,7 +114,8 @@ uninstall: kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube
 	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
 .PHONY: deploy
-deploy: kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+## Deploy controller to the K8s cluster specified in ~/.kube/config.
+deploy: kustomize docker-build
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
@@ -121,10 +124,11 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
 .PHONY: redeploy
-redeploy:
-	$(KUSTOMIZE) build config/samples | kubectl delete -f -
-	$(MAKE) undeploy docker-build deploy
-	$(KUSTOMIZE) build config/samples | kubectl apply -f -
+redeploy: undeploy deploy
+
+.PHONY: clean
+clean: undeploy
+	rm -fr .build-state
 
 OS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 ARCH := $(shell uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/')
