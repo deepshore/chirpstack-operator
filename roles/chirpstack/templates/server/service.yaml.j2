@@ -17,7 +17,7 @@ spec:
   selector:
     app: "chirpstack-{{ ansible_operator_meta.name }}"
 ---
-{% if server.configuration.chirpstack.monitoring.enabled %}
+{% if "monitoring" in server.configuration %}
 apiVersion: v1
 kind: Service
 metadata:
@@ -31,9 +31,9 @@ spec:
   clusterIP: None
 {% endif %}
   ports:
-  - port: {{ server.configuration.chirpstack.monitoring.service.port }}
+  - port: {{ server.configuration.monitoring.port }}
     protocol: TCP
-    targetPort: {{ server.configuration.chirpstack.monitoring.service.target_port }}
+    targetPort: {{ server.configuration.monitoring.target_port }}
   selector:
     app: "chirpstack-{{ ansible_operator_meta.name }}"
 {% endif %}

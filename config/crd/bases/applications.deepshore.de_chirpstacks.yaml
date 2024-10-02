@@ -34,10 +34,10 @@ spec:
             type: object
             x-kubernetes-preserve-unknown-fields: true
             properties:
-              server: 
+              server:
                 type: object
                 default: {}
-                properties: 
+                properties:
                   workload:
                     type: object
                     properties:
@@ -46,10 +46,10 @@ spec:
                         default: deployment
                         enum: ["deployment","statefulset"]
                       image:
-                        type: object 
+                        type: object
                         default: {}
-                        properties: 
-                          registry: 
+                        properties:
+                          registry:
                             type: string
                             default: "docker.io"
                           repository:
@@ -59,7 +59,7 @@ spec:
                             type: string
                             default: "4"
                       replicas:
-                        type: integer 
+                        type: integer
                         default: 1
                         minimum: 1
                       podAnnotations:
@@ -68,7 +68,7 @@ spec:
                           type: object
                           properties:
                             key:
-                              type: string 
+                              type: string
                             value:
                               type: string
                       podLabels:
@@ -77,17 +77,17 @@ spec:
                           type: object
                           properties:
                             key:
-                              type: string 
+                              type: string
                             value:
                               type: string
                       extraEnvVars:
-                        type: array 
+                        type: array
                         items:
                           type: object
                           properties:
                             name:
                               type: string
-                            value: 
+                            value:
                               type: string
                   service:
                     type: object
@@ -104,903 +104,49 @@ spec:
                         type: integer
                   configuration:
                     type: object
-                    default: {}
                     properties:
-                      chirpstack:
+                      configFiles:
                         type: object
-                        default: {}
                         properties:
-                          logging: 
-                            description: Logging configuration.
-                            type: object
-                            default: {}
-                            properties: 
-                              level:
-                                description: Log level.
-                                type: string
-                                enum: ["trace","debug","info","warn","error","off"]
-                                default: "info"
-                              json:
-                                description: Log as JSON.
-                                type: boolean
-                                default: false
-                          postgresql:
-                            description: PostgreSQL configuration.
-                            type: object
-                            default: {}
-                            properties:
-                              dbOperations:
-                                type: object 
-                                default: {}
-                                properties:
-                                  enabled:
-                                    type: boolean
-                                    default: false 
-                                  postgresPassword:
-                                    type: object 
-                                    default: {}
-                                    properties: 
-                                      secret:
-                                        type: string
-                                        default: ""
-                                      key:
-                                        type: string
-                                        default: "password"
-                              dsn: 
-                                description: 'PostgreSQL DSN.
-                                  
-                                  Format example: postgres://<username>:<password>@<hostname>/<database>?sslmode=<sslmode>.
-                                  
-                                  SSL mode options:
-                                  * disable - no SSL
-                                  * require - Always SSL (skip verification)
-                                  * verify-ca - Always SSL (verify that the certificate presented by the server was signed by a trusted CA)
-                                  * verify-full - Always SSL (verify that the certification presented by the server was signed by a trusted CA and the server host name matches the one in the certificate)'
-                                type: object
-                                properties:
-                                  hostname:
-                                    type: string
-                                  database:
-                                    type: string
-                                    default: "chirpstack"
-                                  username:
-                                    type: object
-                                    properties:
-                                      secret:
-                                        type: string
-                                        default: ""
-                                      key:
-                                        type: string
-                                        default: "username"
-                                  password:
-                                    type: object
-                                    properties:
-                                      secret:
-                                        type: string
-                                        default: ""
-                                      key:
-                                        type: string
-                                        default: "password"
-                                  sslMode:
-                                    type: string
-                                    enum: ["disable","require","verify-ca","verify-full"]
-                                    default: "disable"
-                              maxOpenConnections:
-                                description: This sets the max. number of open connections that are allowed in the PostgreSQL connection pool.
-                                type: integer
-                                minimum: 1
-                              minIdleConnections:
-                                description: This sets the min. number of idle connections in the PostgreSQL connection pool (0 = equal to max_open_connections).
-                                type: integer
-                                minimum: 0
-                          redis:
-                            description: Redis configuration.
-                            type: object
-                            default: {}
-                            properties: 
-                              servers:
-                                description: 'Server address or addresses.
-                                
-                                  Example formats:
-                                  redis://127.0.0.1:6379
-                                  redis://:password@127.0.0.1:6379
-                                  redis://username:password@127.0.0.1:6379
-              
-                                  Set multiple addresses when connecting to a cluster.'
-                                type: array 
-                                items:
-                                  type: string
-                              username:
-                                type: object
-                                default: {}
-                                properties:
-                                  secret:
-                                    type: string
-                                    default: ""
-                                  key:
-                                    type: string
-                                    default: "username"
-                              password:
-                                type: object
-                                default: {}
-                                properties:
-                                  secret:
-                                    type: string
-                                    default: ""
-                                  key:
-                                    type: string
-                                    default: "password"
-                              cluster:
-                                description: Set this to true when the provided URLs are pointing to a Redis Cluster instance.
-                                type: boolean 
-                                default: false
-                              tlsEnabled:
-                                type: boolean
-                                default: false
-                              keyPrefix:
-                                type: string
-                                default: ""
-                              maxOpenConnections:
-                                description: This sets the max. number of open connections that are allowed in the Redis connection pool.
-                                type: integer 
-                                minimum: 1
-                              minIdleConnections:
-                                description: This sets the min. number of idle connections in the Redis connection pool (0 = equal to max_open_connections).
-                                type: integer 
-                          api: 
-                            description: API interface configuration.
-                            type: object 
-                            default: {}
-                            properties: 
-                              secret: 
-                                description: 'This secret is used for generating login and API tokens, make sure this is never exposed. 
-                                  Changing this secret will invalidate all login and API tokens. The following command can be used to generate a random secret:
-                                    openssl rand -base64 32'
-                                type: object
-                                default: {}
-                                properties:
-                                  secret:
-                                    type: string
-                                    default: ""
-                                  key:
-                                    type: string
-                                    default: "secret"
-                          gateway:
-                            description: 'Global gateway configuration.
-                              Please note that backend configuration can be found in the per-region
-                              configuration.'
-                            type: object 
-                            default: {}
-                            properties:
-                              caKey:
-                                type: object
-                                default: {}
-                                properties:
-                                  secret:
-                                    type: string
-                                    default: ""
-                                  key:
-                                    type: string
-                                    default: ""
-                              caCert:
-                                type: object
-                                default: {}
-                                properties:
-                                  secret:
-                                    type: string
-                                    default: ""
-                                  key:
-                                    type: string
-                                    default: ""
-                              clientCertLifetime:
-                                description: This defines how long (after generating) the certificate remains valid.
-                                type: string 
-                                default: "11months 30days 3h 50m 24s"
-                              allowUnknownGateways:
-                                description: 'If set to true, then uplinks received from gateways not configured in
-                                  ChirpStack will be allowed.'
-                                type: boolean
-                                default: false
-                          network:
-                            description: Network related configuration.
-                            type: object
-                            default: {}
-                            properties:
-                              netId: 
-                                description: Network identifier (NetID, 3 bytes) encoded as HEX (e.g. 010203).
-                                type: string 
-                                default: "000000"
-                              devAddrPrefixes:
-                                description: 'This makes it possible to configure one or multiple sub-ranges within
-                                  the configured NetID. If left blank, then the complete DevAddr space
-                                  provided by the configured NetID will be used.
-                                  If multiple prefixes are configured, a random prefix will be chosen when
-                                  generating a DevAddr.
-                                  
-                                  Example configuration:
-                                  dev_addr_prefixes=["0000ff00/24"]
-                                  
-                                  This example configures the DevAddr range to 0000ff00 - 0000ffff.
-                                  The /24 means that the 24MSB of the prefix will be used, meaning that the
-                                  8LSB will be used as address space.'
-                                type: array 
-                                default: []
-                                items:
-                                  type: string
-                              enabledRegions:
-                                description: 'Multiple regions can be enabled simultaneously. Each region must match
-                                  the "name" parameter of the region configuration in "[[regions]]".'
-                                type: array
-                                items:
-                                  type: string 
-                                  enum: ["eu433","eu868"]                    
-                              deviceSessionTtl:
-                                description: The TTL value defines the time after which a device-session expires after no activity.
-                                type: string
-                                default: "1month 13h 26m 24s"
-                              deduplicationDelay:
-                                type: string
-                                default: "200ms"
-                              getDownlinkDataDelay:
-                                type: string
-                                default: "100ms"
-                              macCommandsDisabled:
-                                type: boolean 
-                                default: false
-                              adrPlugins:
-                                type: array 
-                                default: []
-                                items:
-                                  type: object
-                                  properties:
-                                    name: 
-                                      type: string
-                                    file: 
-                                      type: string
-                                    configMap:
-                                      type: string
-                                  required:
-                                    - name 
-                                    - file
-                                    - configMap
-                              scheduler:
-                                type: object
-                                default: {}
-                                properties:
-                                  interval: 
-                                    type: string
-                                    default: "1s"
-                                  classALockDuration:
-                                    type: string
-                                    default: "5s"
-                                  classCLockDuration:
-                                    type: string
-                                    default: "5s"
-                                  multicastClassCMargin:
-                                    type: string
-                                    default: "5s"
-                                  multicastClassBMargin:
-                                    type: string
-                                    default: "5s"
-                          monitoring:
-                            description: Monitoring related configuration.
-                            type: object 
-                            default: {}
-                            properties:
-                              enabled:
-                                type: boolean
-                                default: false
-                              service:
-                                type: object
-                                default: {}
-                                properties:
-                                  targetPort:
-                                    type: integer
-                                    default: 9090
-                                  port:
-                                    type: integer
-                                    default: 9090
-                              metaLogMaxHistory:
-                                description: 'This defines the max number of meta records that will be persisted in Redis Streams.
-                                  Setting this value to 0 disables this feature.'
-                                type: integer
-                                default: 10
-                              gatewayFrameLogMaxHistory:
-                                description: 'This defines the max number of frame-log records that will be persisted in Redis Streams.
-                                  This stream contains the uplink and downlink frames of all gateways.
-                                  Setting this value to 0 disables this feature.'
-                                type: integer
-                                default: 10
-                              deviceFrameLogMaxHistory:
-                                description: 'This defines the max number of frame-log records that will be persisted in Redis Streams.
-                                  This stream contains the uplink and downlink frames of all devices.
-                                  Setting this value to 0 disables this feature.'
-                                type: integer
-                                default: 10
-                              deviceEventLogMaxHistory:
-                                description: 'This defines the max number of event-log records that will be persisted in Redis Streams.
-                                  This stream contains the events of all devices.
-                                  Setting this value to 0 disables this feature.'
-                                type: integer
-                                default: 10
-                              perGatewayFrameLogMaxHistory:
-                                description: 'Equal to the gateway_frame_log_max_history, but for each gateway a new Redis Stream
-                                  is created.
-                                  Setting this value to 0 disables this feature.'
-                                type: integer
-                                default: 10
-                              perGatewayFrameLogTtl:
-                                description: 'This defines the TTL of the Redis Stream key.'
-                                type: string
-                                default: "1month 13h 26m 24s"
-                              perDeviceFrameLogMaxHistory:
-                                description: 'Equal to the device_frame_log_max_history, but for each device a new Redis Stream
-                                  is created.
-                                  Setting this value to 0 disables this feature.'
-                                type: integer
-                                default: 10
-                              perDeviceFrameLogTtl:
-                                description: 'This defines the TTL of the Redis Stream key.'
-                                type: string
-                                default: "1month 13h 26m 24s"
-                              perDeviceEventLogMaxHistory:
-                                description: 'Equal to the device_event_log_max_history, but for each device a new Redis Stream
-                                  is created.
-                                  Setting this value to 0 disables this feature.'
-                                type: integer
-                                default: 10
-                              perDeviceEventLogTtl:
-                                description: 'This defines the TTL of the Redis Stream key.'
-                                type: string
-                                default: "1month 13h 26m 24s"
-                          integration:
-                            description: Global integration related configuration.
-                            type: object 
-                            default: {}
-                            properties:
-                              enabled:
-                                description: Enabled integrations (global).
-                                type: array
-                                items:
-                                  type: string
-                                  enum: ["mqtt"] 
-                              mqtt:
-                                description: MQTT integration configuration.
-                                type: object
-                                default: {}
-                                properties: 
-                                  eventTopic:
-                                    description: Event topic template.
-                                    type: string
-                                    default: "{% raw %}application/{{application_id}}/device/{{dev_eui}}/event/{{event}}{% endraw %}"
-                                  commandTopic: 
-                                    description: This is the topic on which the MQTT subscribes for receiving (enqueue) commands.
-                                    type: string
-                                    default: "{% raw %}application/{{application_id}}/device/{{dev_eui}}/command/{{command}}{% endraw %}"
-                                  json:
-                                    description: Use JSON encoding instead of Protobuf (binary).
-                                    type: boolean
-                                    default: true
-                                  server:
-                                    description: MQTT server (e.g. scheme://hostname:port where scheme is tcp, ssl or ws)
-                                    type: object
-                                    properties:
-                                      scheme:
-                                        type: string
-                                        enum: ["tcp","ssl","ws"]
-                                        default: "tcp"
-                                      hostname:
-                                        type: string 
-                                      port:
-                                        type: integer
-                                        default: 1883
-                                  username:
-                                    type: object
-                                    default: {}
-                                    properties:
-                                      secret:
-                                        type: string
-                                        default: ""
-                                      key:
-                                        type: string
-                                        default: "username"
-                                  password:
-                                    type: object
-                                    default: {}
-                                    properties:
-                                      secret:
-                                        type: string
-                                        default: ""
-                                      key:
-                                        type: string
-                                        default: "password" 
-                                  qos:
-                                    description: 'Quality of service level
-            
-                                      0: at most once
-                                      1: at least once
-                                      2: exactly once
-            
-                                      Note: an increase of this value will decrease the performance.
-                                      For more information: https://www.hivemq.com/blog/mqtt-essentials-part-6-mqtt-quality-of-service-levels'
-                                    type: integer
-                                    enum: [0,1,2]
-                                    default: 0
-                                  cleanSession: 
-                                    description: 'Clean session
-            
-                                      Set the "clean session" flag in the connect message when this client
-                                      connects to an MQTT broker. By setting this flag you are indicating
-                                      that no messages saved by the broker for this client should be delivered.' 
-                                    type: boolean
-                                    default: false
-                                  clientId: 
-                                    description: 'Set the client id to be used by this client when connecting to the MQTT
-                                      broker. A client id must be no longer than 23 characters. If left blank,
-                                      a random id will be generated by ChirpStack.'
-                                    type: object 
-                                    default: {}
-                                    properties:
-                                      mode: 
-                                        type: string
-                                        enum: ["random","podname","custom"]
-                                        default: "random"
-                                      customId: 
-                                        type: string
-                                  keepAliveInterval:
-                                    description: This defines the maximum time that that should pass without communication between the client and server.
-                                    type: string
-                                    default: "30s"
-                                  caCert:
-                                    description: 'CA certificate file (optional)
-            
-                                      Use this when setting up a secure connection (when server uses ssl://...)
-                                      but the certificate used by the server is not trusted by any CA certificate
-                                      on the server (e.g. when self generated).'
-                                    type: object
-                                    default: {}
-                                    properties:
-                                      secret:
-                                        type: string
-                                        default: ""
-                                      key:
-                                        type: string
-                                        default: ""
-                                  tlsCert:
-                                    description: TLS certificate file (optional)
-                                    type: object
-                                    default: {}
-                                    properties:
-                                      secret:
-                                        type: string
-                                        default: ""
-                                      key:
-                                        type: string
-                                        default: ""
-                                  tlsKey:
-                                    description: TLS key file (optional)
-                                    type: object
-                                    default: {}
-                                    properties:
-                                      secret:
-                                        type: string
-                                        default: ""
-                                      key:
-                                        type: string
-                                        default: ""
-                                  client: 
-                                    description: Configuration for MQTT clients.
-                                    type: object
-                                    default: {}
-                                    properties:
-                                      caKey:
-                                        description: 'If setting the CA certificate and key file options, ChirpStack 
-                                          will generate client certificates which can be used by the MQTT clients for
-                                          authentication and authorization. The Common Name of the certificate will
-                                          be set to the ID of the application.'
-                                        type: object
-                                        default: {}
-                                        properties:
-                                          secret:
-                                            type: string
-                                            default: ""
-                                          key:
-                                            type: string
-                                            default: ""
-                                      caCert:
-                                        type: object
-                                        default: {}
-                                        properties:
-                                          secret:
-                                            type: string
-                                            default: ""
-                                          key:
-                                            type: string
-                                            default: ""
-                                      clientCertLifetime:
-                                        description: This defines how long (after generating) the certificate remains valid.
-                                        type: string
-                                        default: "11months 30days 3h 50m 24s"
-                          codec:
-                            description: Codec configuration.
-                            type: object
-                            default: {}
-                            properties:
-                              js:
-                                description: JS codec configuration.
-                                type: object
-                                default: {}
-                                properties:
-                                  maxExecutionTime:
-                                    type: string
-                                    default: "100ms"
-                          userAuthentication:
-                            description: User authentication configuration.
-                            type: object
-                            default: {}
-                            properties:
-                              enabled:
-                                description: 'Enabled authentication backend.
-                                  Options are:
-                                   * internal       - Internal authentication backend (default).
-                                   * openid_connect - OpenID Connect based backend.
-                                   * oauth2         - OAuth2 based backend.'
-                                type: string 
-                                enum: ["internal","openid_connect","oauth2"]
-                                default: "internal"
-                              openidConnect:
-                                description: OpenID Connect.
-                                type: object
-                                default: {}
-                                properties: 
-                                  enabled:
-                                    description: Enabling this option replaces password authentication.
-                                    type: boolean
-                                    default: false
-                                  registrationEnabled:
-                                    description: 'Enabling this will automatically register the user when it is not yet present
-                                      in the ChirpStack database. There is no registration form as the user information
-                                      is automatically received using the OpenID Connect provided information.
-                                      The user will not be associated with any organization, but in order to
-                                      facilitate the automatic onboarding of users, it is possible to configure a
-                                      registration callback URL (next config option).'
-                                    type: boolean
-                                    default: false
-                                  registrationCallbackUrl:
-                                    description: 'This (optional) endpoint will be called on the registration of the user and
-                                      can implement the association of the user with an organization, create a new
-                                      organization, ...
-                                      ChirpStack will make a HTTP POST call to this endpoint,
-                                      with the following URL parameters:
-                                      - user_id, of the newly created user in ChirpStack.
-                                      
-                                      The POST body contains a JSON payload with the OpenID Connect UserInfo payload.'
-                                    type: string
-                                    default: ""              
-                                  providerUrl:
-                                    description: 'This is the URL of the OpenID Connect provider. Example: https://auth.example.org'
-                                    type: string
-                                    default: "" 
-                                  clientId:
-                                    type: string
-                                    default: ""
-                                  clientSecret:
-                                    type: object
-                                    default: {}
-                                    properties:
-                                      secret:
-                                        type: string
-                                        default: ""
-                                      key:
-                                        type: string
-                                        default: "secret"
-                                  redirectUrl:
-                                    description: This must contain the ChirpStack Application Server web-interface hostname with /auth/oidc/callback path, e.g. https://example.com/auth/oidc/callback.
-                                    type: string
-                                    default: ""  
-                                  logoutUrl:
-                                    description: When set, ChirpStack Application Server will redirect to this URL instead of redirecting to the login page.
-                                    type: string
-                                    default: "" 
-                                  loginRedirect:
-                                    description: If set to true, then ChirpStack will immediately redirect to the OAuth2 provider for login.
-                                    type: boolean
-                                    default: false
-                                  loginLabel: 
-                                    description: The login label is used in the web-interface login form.
-                                    type: string
-                                    default: ""
-                                  assumeEmailVerified:
-                                    description: 'If set to true, then ChirpStack will ignore the email_verified received 
-                                      from the OpenID Connect provider, assuming it will be true. Some
-                                      providers do not provide this field, in which case setting this value is needed.'
-                                    type: boolean
-                                    default: false
-                                  scopes:
-                                    description: 'This configures the scopes that are used during login. You must at least define "email" and "profile".'
-                                    type: array
-                                    items:
-                                      type: string
-                                    default: ["email","profile"]
-                          backendInterfaces:
-                            description: Backend Interfaces configuration (optional).
-                            type: object
-                            default: {}
-                            properties:
-                              bind:
-                                description: 'interface:port to bind the Backend Interfaces API to.
-          
-                                  Note: this interface is used both for passive-roaming and when
-                                  integrating with Join Servers that implement the async interface.
-                                  Leaving this option blank will disable the Backend Interfaces API,
-                                  which is fine in most cases.'
-                                type: string
-                                default: ""
-                              caCert:
-                                description: CA certificate
-                                type: object
-                                default: {}
-                                properties:
-                                  secret:
-                                    type: string
-                                    default: ""
-                                  key:
-                                    type: string
-                                    default: ""
-                              tlsCert:
-                                description: TLS certificate
-                                type: object
-                                default: {}
-                                properties:
-                                  secret:
-                                    type: string
-                                    default: ""
-                                  key:
-                                    type: string
-                                    default: ""
-                              tlsKey:
-                                description: TLS key
-                                type: object
-                                default: {}
-                                properties:
-                                  secret:
-                                    type: string
-                                    default: ""
-                                  key:
-                                    type: string
-                                    default: ""                         
-                      regions: 
-                        type: object 
-                        default: {}
+                          configMapName:
+                            type: string
+                        required:
+                          - configMapName
+                      envSecrets:
+                        type: array
+                        default: []
+                        items:
+                          type: string
+                      adrPluginFiles:
+                        type: object
                         properties:
-                          eu433:
-                            type: object
-                            default: {}
-                            properties:
-                              gateway: 
-                                type: object 
-                                default: {}
-                                properties:
-                                  forceGwsPrivate:
-                                    type: boolean
-                                    default: false
-                                  backend: 
-                                    type: object 
-                                    default: {}
-                                    properties: 
-                                      mqtt: 
-                                        type: object 
-                                        default: {}
-                                        properties: 
-                                          server:
-                                            description: MQTT server (e.g. scheme://hostname:port where scheme is tcp, ssl or ws)
-                                            type: object
-                                            default: {}
-                                            properties:
-                                              scheme:
-                                                type: string
-                                                enum: ["tcp","ssl","ws"]
-                                                default: "tcp"
-                                              hostname:
-                                                type: string 
-                                                default: ""
-                                              port:
-                                                type: integer
-                                                default: 1883
-                                          username:
-                                            type: object
-                                            default: {}
-                                            properties:
-                                              secret:
-                                                type: string
-                                                default: ""
-                                              key:
-                                                type: string
-                                                default: "username"
-                                          password:
-                                            type: object
-                                            default: {}
-                                            properties:
-                                              secret:
-                                                type: string
-                                                default: ""
-                                              key:
-                                                type: string
-                                                default: "password"
-                                          qos:
-                                            type: integer
-                                            enum: [0, 1, 2]
-                                            default: 0
-                                          cleanSession:
-                                            type: boolean
-                                            default: false
-                                          clientId: 
-                                            description: 'Set the client id to be used by this client when connecting to the MQTT
-                                              broker. A client id must be no longer than 23 characters. If left blank,
-                                              a random id will be generated by ChirpStack.'
-                                            type: object 
-                                            default: {}
-                                            properties:
-                                              mode: 
-                                                type: string
-                                                enum: ["random","podname","custom"]
-                                                default: "random"
-                                              customId: 
-                                                type: string
-                                          keepAliveInterval: 
-                                            type: string 
-                                            default: "30s"
-                                          caCert:
-                                            description: CA certificate
-                                            type: object
-                                            default: {}
-                                            properties:
-                                              secret:
-                                                type: string
-                                                default: ""
-                                              key:
-                                                type: string
-                                                default: ""
-                                          tlsCert:
-                                            description: TLS certificate
-                                            type: object
-                                            default: {}
-                                            properties:
-                                              secret:
-                                                type: string
-                                                default: ""
-                                              key:
-                                                type: string
-                                                default: ""
-                                          tlsKey:
-                                            description: TLS key
-                                            type: object
-                                            default: {}
-                                            properties:
-                                              secret:
-                                                type: string
-                                                default: ""
-                                              key:
-                                                type: string
-                                                default: "" 
-                          eu868:
-                            type: object
-                            default: {}
-                            properties:
-                              gateway: 
-                                type: object 
-                                default: {}
-                                properties:
-                                  forceGwsPrivate:
-                                    type: boolean
-                                    default: false
-                                  backend: 
-                                    type: object 
-                                    default: {}
-                                    properties: 
-                                      mqtt: 
-                                        type: object 
-                                        default: {}
-                                        properties:
-                                          eventTopic:
-                                            description: Event topic template.
-                                            type: string
-                                            default: ""
-                                          commandTopic: 
-                                            description: This is the topic on which the MQTT subscribes for receiving (enqueue) commands.
-                                            type: string
-                                            default: ""
-                                          server:
-                                            description: MQTT server (e.g. scheme://hostname:port where scheme is tcp, ssl or ws)
-                                            type: object
-                                            default: {}
-                                            properties:
-                                              scheme:
-                                                type: string
-                                                enum: ["tcp","ssl","ws"]
-                                                default: "tcp"
-                                              hostname:
-                                                type: string 
-                                                default: ""
-                                              port:
-                                                type: integer
-                                                default: 1883
-                                          username:
-                                            type: object
-                                            default: {}
-                                            properties:
-                                              secret:
-                                                type: string
-                                                default: ""
-                                              key:
-                                                type: string
-                                                default: "username"
-                                          password:
-                                            type: object
-                                            default: {}
-                                            properties:
-                                              secret:
-                                                type: string
-                                                default: ""
-                                              key:
-                                                type: string
-                                                default: "password"
-                                          qos:
-                                            type: integer
-                                            enum: [0, 1, 2]
-                                            default: 0
-                                          cleanSession:
-                                            type: boolean
-                                            default: false
-                                          clientId: 
-                                            description: 'Set the client id to be used by this client when connecting to the MQTT
-                                              broker. A client id must be no longer than 23 characters. If left blank,
-                                              a random id will be generated by ChirpStack.'
-                                            type: object 
-                                            default: {}
-                                            properties:
-                                              mode: 
-                                                type: string
-                                                enum: ["random","podname","custom"]
-                                                default: "random"
-                                              customId: 
-                                                type: string
-                                          keepAliveInterval: 
-                                            type: string 
-                                            default: "30s"
-                                          caCert:
-                                            description: CA certificate
-                                            type: object
-                                            default: {}
-                                            properties:
-                                              secret:
-                                                type: string
-                                                default: ""
-                                              key:
-                                                type: string
-                                                default: ""
-                                          tlsCert:
-                                            description: TLS certificate
-                                            type: object
-                                            default: {}
-                                            properties:
-                                              secret:
-                                                type: string
-                                                default: ""
-                                              key:
-                                                type: string
-                                                default: ""
-                                          tlsKey:
-                                            description: TLS key
-                                            type: object
-                                            default: {}
-                                            properties:
-                                              secret:
-                                                type: string
-                                                default: ""
-                                              key:
-                                                type: string
-                                                default: "" 
+                          configMapName:
+                            type: string
+                      certificates:
+                        type: array
+                        default: []
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            secretName:
+                              type: string
+                          required:
+                            - name
+                            - secretName
+                      monitoring:
+                        type: object
+                        properties:
+                          port:
+                            type: string
+                          targetPort:
+                            type: string
+                        required:
+                          - port
+                          - targetPort
+                    required:
+                      - configFiles
               restApi:
                 type: object
                 default: {}
@@ -1009,14 +155,14 @@ spec:
                     type: boolean
                     default: true
                   workload:
-                    type: object 
+                    type: object
                     default: {}
                     properties:
                       image:
-                        type: object 
+                        type: object
                         default: {}
-                        properties: 
-                          registry: 
+                        properties:
+                          registry:
                             type: string
                             default: "docker.io"
                           repository:
@@ -1026,7 +172,7 @@ spec:
                             type: string
                             default: "4"
                       replicas:
-                        type: integer 
+                        type: integer
                         default: 1
                         minimum: 1
                   service:
@@ -1043,7 +189,7 @@ spec:
                       nodePort:
                         type: integer
                   configuration:
-                    type: object 
+                    type: object
                     default: {}
                     properties:
                       insecure:
@@ -1053,15 +199,15 @@ spec:
             description: Status defines the observed state of Chirpstack
             type: object
             x-kubernetes-preserve-unknown-fields: true
-            properties: 
+            properties:
               secrets:
                 type: object
                 properties:
-                  status: 
+                  status:
                     type: string
                     enum: ["Processing","Error","Done"]
                   message:
-                    type: string 
+                    type: string
                     default: ""
         type: object
     served: true

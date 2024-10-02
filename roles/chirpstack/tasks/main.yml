@@ -3,28 +3,11 @@
 - debug:
     msg: Hello from the Chirpstack Operator.
 
-- name: Manage Secrets
-  include_tasks: secrets/main.yml
-
 # - name: Manage PostgreSQL
 #   include_tasks: manage_postgresql.yml
-    
+
 # - debug:
-#     msg: Check connection to Redis. 
-
-- name: Manage configuration (Chirpstack)
-  kubernetes.core.k8s:
-    state: present
-    template: "templates/server/configuration.yaml.j2"
-  notify:
-    - "restart server pods" 
-
-- name: Manage configuration (Regions)
-  kubernetes.core.k8s:
-    state: present
-    template: "templates/server/configuration-regions.yaml.j2"   
-  notify:
-    - "restart server pods" 
+#     msg: Check connection to Redis.
 
 - name: Manage Service
   kubernetes.core.k8s:
@@ -54,7 +37,7 @@
     template: "templates/rest_api/deployment.yaml.j2"
   when: rest_api.enabled
   notify:
-    - "restart rest-api pods" 
+    - "restart rest-api pods"
 
 - name: Manage Service (Rest-API)
   kubernetes.core.k8s:

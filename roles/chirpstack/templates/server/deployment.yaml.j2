@@ -44,72 +44,38 @@ spec:
           value: {{ env.value }}
 {% endfor %}
         envFrom:
+{% for user_env_secret in server.configuration.env_secrets %}
         - secretRef:
-            name: "chirpstack-{{ ansible_operator_meta.name }}"
+            name: {{ user_env_secret }}
+{% endfor %}
         ports:
         - containerPort: 8080
           name: web
         volumeMounts:
         - name: configuration-chirpstack
-          mountPath: /etc/chirpstack/chirpstack.toml
-          subPath: chirpstack.toml
-        - name: configuration-regions
-          mountPath: /etc/chirpstack/region_eu433.toml
-          subPath: region_eu433.toml      
-        - name: configuration-regions
-          mountPath: /etc/chirpstack/region_eu868.toml
-          subPath: region_eu868.toml   
-{% for cert in certs_from_secrets_chirpstack %}
-{% if cert.secret %}
-        - name: {{ secret.volume }}
-          mountPath: /certs/{{ cert.path }}
-          subPath: {{ cert.path }}
+          mountPath: /etc/chirpstack
+          readOnly: true
+{% for cert in server.configuration.certificates %}
+        - name: {{ cert.name }}
+          mountPath: /certs/{{ cert.name }}
+          readOnly: true
+{% endfor %}
+{% if "adrPluginFiles" in server.configuration %}
+        - name: adr-plugins
+          mountPath: /adr-plugins
+          readOnly: true
 {% endif %}
-{% endfor %}
-{% for cert in certs_from_secrets_regions %}
-{% if cert.secret %}
-        - name: {{ secret.volume }}
-          mountPath: /certs/{{ cert.path }}
-          subPath: {{ cert.path }}
-{% endif %}
-{% endfor %}
-{% for plugin in server.configuration.chirpstack.network.adr_plugins %}
-        - name: {{ plugin.name }}
-          mountPath: /adr-plugins/{{ plugin.file }}
-          subPath: {{ plugin.file }}
-{% endfor %}
-      volumes: 
+      volumes:
       - name: configuration-chirpstack
         configMap:
-          name: "{{ ansible_operator_meta.name }}-configuration-chirpstack"
-      - name: configuration-regions 
-        configMap:
-          name: "{{ ansible_operator_meta.name }}-configuration-regions"
-{% for cert in certs_from_secrets_chirpstack %}
-{% if cert.secret %}
-      - name: {{ secret.volume }}
+          name: {{ server.configuration.config_files.config_map_name }}
+{% for cert in server.configuration.certificates %}
+      - name: {{ cert.name }}
         secret:
-          secretName: {{ cert.secret }}
-          items:
-          - key: {{ cert.key }}
-            path: {{ cert.path }}
-{% endif %}
+          secretName: {{ cert.secret_name }}
 {% endfor %}
-{% for cert in certs_from_secrets_regions %}
-{% if cert.secret %}
-      - name: {{ secret.volume }}
-        secret:
-          secretName: {{ cert.secret }}
-          items:
-          - key: {{ cert.key }}
-            path: {{ cert.path }}
-{% endif %}
-{% endfor %}
-{% for plugin in server.configuration.chirpstack.network.adr_plugins %}
-      - name: {{ plugin.name }}
+{% if "adrPluginFiles" in server.configuration %}
+      - name: adr-plugins
         configMap:
-          name: {{ plugin.config_map }}
-          items: 
-          - key: {{ plugin.file }}
-            path: {{ plugin.file }}
-{% endfor %}
+          name: {{ server.configuration.adr_plugin_files.config_map_name }}
+{% endif %}
