@@ -694,10 +694,29 @@ spec:
                             default: {}
                             description: User authentication configuration.
                             properties:
+                              enabled:
+                                default: internal
+                                description: 'Enabled authentication backend. Options
+                                  are: * internal       - Internal authentication
+                                  backend (default). * openid_connect - OpenID Connect
+                                  based backend. * oauth2         - OAuth2 based backend.'
+                                enum:
+                                - internal
+                                - openid_connect
+                                - oauth2
+                                type: string
                               openidConnect:
                                 default: {}
                                 description: OpenID Connect.
                                 properties:
+                                  assumeEmailVerified:
+                                    default: false
+                                    description: If set to true, then ChirpStack will
+                                      ignore the email_verified received from the
+                                      OpenID Connect provider, assuming it will be
+                                      true. Some providers do not provide this field,
+                                      in which case setting this value is needed.
+                                    type: boolean
                                   clientId:
                                     default: ""
                                     type: string
@@ -721,6 +740,12 @@ spec:
                                     description: The login label is used in the web-interface
                                       login form.
                                     type: string
+                                  loginRedirect:
+                                    default: false
+                                    description: If set to true, then ChirpStack will
+                                      immediately redirect to the OAuth2 provider
+                                      for login.
+                                    type: boolean
                                   logoutUrl:
                                     default: ""
                                     description: When set, ChirpStack Application
@@ -756,6 +781,16 @@ spec:
                                       of users, it is possible to configure a registration
                                       callback URL (next config option).
                                     type: boolean
+                                  scopes:
+                                    default:
+                                    - email
+                                    - profile
+                                    description: This configures the scopes that are
+                                      used during login. You must at least define
+                                      "email" and "profile".
+                                    items:
+                                      type: string
+                                    type: array
                                 type: object
                             type: object
                         type: object

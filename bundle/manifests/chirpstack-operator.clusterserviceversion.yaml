@@ -147,10 +147,10 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2023-10-31T09:58:48Z"
-    operators.operatorframework.io/builder: operator-sdk-v1.32.0
+    createdAt: "2024-11-14T11:03:05Z"
+    operators.operatorframework.io/builder: operator-sdk-v1.37.0
     operators.operatorframework.io/project_layout: ansible.sdk.operatorframework.io/v1
-  name: chirpstack-operator.v0.0.2
+  name: chirpstack-operator.v0.0.8
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -329,12 +329,9 @@ spec:
                   initialDelaySeconds: 5
                   periodSeconds: 10
                 resources:
-                  limits:
-                    cpu: 500m
-                    memory: 768Mi
                   requests:
-                    cpu: 10m
-                    memory: 256Mi
+                    cpu: 500m
+                    memory: 4Gi
                 securityContext:
                   allowPrivilegeEscalation: false
                   capabilities:
@@ -403,4 +400,4 @@ spec:
   provider:
     name: Deepshore GmbH
     url: https://deepshore.de/
-  version: 0.0.2
+  version: 0.0.8
