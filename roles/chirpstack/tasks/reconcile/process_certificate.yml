@@ -12,7 +12,7 @@
       {{
         {
           certificate.secret_name: (current_secret.resources[0].data | default({}))
-        } | to_json | password_hash(salt="123")
+        } | to_json | password_hash(salt=hash_secret)
       }}
 
 - name: Get last known Secret data from CR status

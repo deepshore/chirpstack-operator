@@ -9,5 +9,8 @@
 # - debug:
 #     msg: Check connection to Redis.
 
+- name: Create hash secret
+  include_tasks: create_hash_secret.yml
+
 - name: Check for necessary reconciliation
   include_tasks: reconcile/main.yml

@@ -17,6 +17,17 @@
     updated_secrets_status: {}
     updated_certificates_status: {}
 
+- name: Get hash secret
+  block:
+    - k8s_info:
+        api_version: applications.deepshore.de/v1alpha1
+        kind: Secret
+        name: chirpstack-operator-hash-secret
+        namespace: "{{ ansible_operator_meta.namespace }}"
+      register: hash_secret_resource
+    - set_fact:
+        hash_secret: hash_secret_resource.resources[0].data
+
 - name: Check the current status
   block:
     - k8s_info:
