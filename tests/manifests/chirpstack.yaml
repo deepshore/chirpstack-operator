@@ -1,7 +1,0 @@
-apiVersion: v1
-data:
-  secret: YXBpLXNlY3JldA==
-kind: Secret
-metadata:
-  name: api-secret
-type: Opaque

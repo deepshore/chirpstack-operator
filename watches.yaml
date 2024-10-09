@@ -1,9 +1,0 @@
----
-# Use the 'create api' subcommand to add watches to this file.
-- version: v1alpha1
-  group: applications.deepshore.de
-  kind: Chirpstack
-  role: chirpstack
-  reconcilePeriod: 0s
-  watchDependentResources: false
-#+kubebuilder:scaffold:watch
