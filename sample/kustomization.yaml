@@ -1,0 +1,6 @@
+resources:
+- chirpstack-env-secrets.yaml
+- chirpstack-certificates.yaml
+- chirpstack-adr-plugin-files.yaml
+- chirpstack-config.yaml
+- applications_v1alpha1_chirpstack.yaml

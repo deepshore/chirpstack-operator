@@ -1,0 +1,47 @@
+apiVersion: applications.deepshore.de/v1alpha1
+kind: Chirpstack
+metadata:
+  labels:
+    app.kubernetes.io/name: chirpstack
+    app.kubernetes.io/instance: test
+    app.kubernetes.io/part-of: chirpstack-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: chirpstack-operator
+  name: test
+spec:
+  server:
+    workload:
+      type: statefulset
+      image:
+        registry: docker.io
+        repository: chirpstack/chirpstack
+        tag: "4"
+      podAnnotations:
+        - key: my-annotation-key
+          value: my-annotation-value
+      podLabels:
+        - key: my-label-key
+          value: my-label-value
+      extraEnvVars:
+        - name: TEST_NAME
+          value: testvalue
+      replicas: 3
+    service:
+      port: 8080
+    configuration:
+      configFiles:
+        configMapName: chirpstack-config
+      envSecrets:
+        - chirpstack-env-secret-1
+        - chirpstack-env-secret-2
+      certificates:
+        - name: cert-1
+          secretName: chirpstack-cert-1
+        - name: cert-2
+          secretName: chirpstack-cert-2
+      adrPluginFiles:
+        configMapName: chirpstack-adr-plugin-files
+  restApi:
+    enabled: true
+    service:
+      port: 8090
