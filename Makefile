@@ -14,8 +14,7 @@ manifest/crd.yaml: manifests src/crd.rs
 
 manifests: $(addprefix manifest/,$(COPY_MANIFESTS)) manifest/crd.yaml
 
-run-controller:
-	kubectl apply -f manifest/crd.yaml
+run-controller: install
 	cargo build
 	RUST_LOG=debug cargo run --bin controller
 
