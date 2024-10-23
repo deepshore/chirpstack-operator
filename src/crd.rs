@@ -1,14 +1,12 @@
 pub use spec::Chirpstack;
 
 pub mod spec {
-    use serde::{Deserialize, Serialize};
+    use super::status::Status;
     use kube_derive::CustomResource;
     use schemars::JsonSchema;
-    use super::status::Status;
+    use serde::{Deserialize, Serialize};
 
-    #[derive(
-        CustomResource, Debug, Serialize, Deserialize, Default, Clone, JsonSchema,
-    )]
+    #[derive(CustomResource, Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
     #[kube(
         status = "Status",
         group = "applications.deepshore.de",
@@ -23,8 +21,8 @@ pub mod spec {
     }
 
     pub mod server {
-        use serde::{Deserialize, Serialize};
         use schemars::JsonSchema;
+        use serde::{Deserialize, Serialize};
 
         #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
         #[serde(rename_all = "camelCase")]
@@ -35,11 +33,9 @@ pub mod spec {
         }
 
         pub mod workload {
-            use super::super::super::types::{
-                Image, EnvVar, KeyValue, WorkloadType,
-            };
-            use serde::{Deserialize, Serialize};
+            use super::super::super::types::{EnvVar, Image, KeyValue, WorkloadType};
             use schemars::JsonSchema;
+            use serde::{Deserialize, Serialize};
 
             #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
             #[serde(rename_all = "camelCase")]
@@ -59,8 +55,8 @@ pub mod spec {
 
         pub mod service {
             use super::super::super::types::ServiceType;
-            use serde::{Deserialize, Serialize};
             use schemars::JsonSchema;
+            use serde::{Deserialize, Serialize};
 
             #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
             #[serde(rename_all = "camelCase")]
@@ -76,11 +72,9 @@ pub mod spec {
         }
 
         pub mod configuration {
-            use super::super::super::types::{
-                Certificate, ConfigFiles, ConfigMapName, Monitoring,
-            };
-            use serde::{Deserialize, Serialize};
+            use super::super::super::types::{Certificate, ConfigFiles, ConfigMapName, Monitoring};
             use schemars::JsonSchema;
+            use serde::{Deserialize, Serialize};
 
             #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
             #[serde(rename_all = "camelCase")]
@@ -97,9 +91,9 @@ pub mod spec {
     }
 
     pub mod rest_api {
-        use serde::{Deserialize, Serialize};
-        use schemars::JsonSchema;
         use super::server::service::Service;
+        use schemars::JsonSchema;
+        use serde::{Deserialize, Serialize};
 
         #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
         #[serde(rename_all = "camelCase")]
@@ -118,8 +112,8 @@ pub mod spec {
 
         pub mod workload {
             use super::super::super::types::Image;
-            use serde::{Deserialize, Serialize};
             use schemars::JsonSchema;
+            use serde::{Deserialize, Serialize};
 
             #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
             #[serde(rename_all = "camelCase")]
@@ -130,8 +124,8 @@ pub mod spec {
         }
 
         pub mod configuration {
-            use serde::{Deserialize, Serialize};
             use schemars::JsonSchema;
+            use serde::{Deserialize, Serialize};
 
             #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
             #[serde(rename_all = "camelCase")]
@@ -143,8 +137,8 @@ pub mod spec {
 }
 
 pub mod status {
-    use serde::{Deserialize, Serialize};
     use schemars::JsonSchema;
+    use serde::{Deserialize, Serialize};
 
     #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
     #[serde(rename_all = "camelCase")]
@@ -169,10 +163,9 @@ pub mod status {
     }
 }
 
-
 pub mod types {
-    use serde::{Deserialize, Serialize};
     use schemars::JsonSchema;
+    use serde::{Deserialize, Serialize};
 
     #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema, PartialEq)]
     #[serde(rename_all = "lowercase")]
