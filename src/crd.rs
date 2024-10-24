@@ -166,6 +166,8 @@ pub mod status {
 pub mod types {
     use schemars::JsonSchema;
     use serde::{Deserialize, Serialize};
+    use std::fmt;
+
 
     #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema, PartialEq)]
     #[serde(rename_all = "lowercase")]
@@ -220,6 +222,12 @@ pub mod types {
         #[default]
         ClusterIP,
         NodePort,
+    }
+
+    impl fmt::Display for ServiceType {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "{self:?}")
+        }
     }
 
     #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]

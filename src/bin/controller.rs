@@ -17,6 +17,7 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::fmt::Debug;
 use k8s_openapi::api::apps::v1::{Deployment, StatefulSet};
+use k8s_openapi::api::core::v1::{Service};
 
 const CONTROLLER_NAME: &str = "chirpstack-operator";
 
@@ -111,14 +112,12 @@ where
 
 async fn apply(chirpstack: Arc<Chirpstack>, client: Client) -> Result<Action, Error> {
     log::info!("APPLY {chirpstack:?}");
-    let result = match chirpstack.spec.server.workload.workload_type {
+    match chirpstack.spec.server.workload.workload_type {
         WorkloadType::Deployment => apply_resource(&client, &builder::server::deployment::build(chirpstack.as_ref())).await,
         WorkloadType::StatefulSet => apply_resource(&client, &builder::server::statefulset::build(chirpstack.as_ref())).await,
-    };
-    match result {
-        Ok(o) => Ok(Action::requeue(Duration::from_secs(300))),
-        Err(e) => Err(e)
-    }
+    }?;
+    apply_resource(&client, &builder::server::service::build(chirpstack.as_ref())).await?;
+    Ok(Action::requeue(Duration::from_secs(300)))
 }
 
 async fn cleanup(chirpstack: Arc<Chirpstack>, client: Client) -> Result<Action, Error> {
@@ -148,10 +147,10 @@ async fn cleanup(chirpstack: Arc<Chirpstack>, client: Client) -> Result<Action, 
     }
 
     // Delete Services
-    //let services: Api<Service> = Api::namespaced(client.clone(), &namespace);
-    //for svc in services.list(&lp).await? {
-    //    services.delete(&svc.name_any(), &DeleteParams::default()).await?;
-    //}
+    let services: Api<Service> = Api::namespaced(client.clone(), &namespace);
+    for svc in services.list(&lp).await? {
+        services.delete(&svc.name_any(), &DeleteParams::default()).await?;
+    }
 
     // Delete other resources similarly...
 
