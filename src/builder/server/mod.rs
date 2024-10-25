@@ -1,3 +1,3 @@
 pub mod deployment;
-pub mod statefulset;
 pub mod service;
+pub mod statefulset;

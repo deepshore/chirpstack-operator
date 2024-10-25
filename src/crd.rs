@@ -168,7 +168,6 @@ pub mod types {
     use serde::{Deserialize, Serialize};
     use std::fmt;
 
-
     #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema, PartialEq)]
     #[serde(rename_all = "lowercase")]
     pub enum WorkloadType {

@@ -1,22 +1,22 @@
-use std::sync::Arc;
-use kube::ResourceExt;
+use crate::crd::types::WorkloadType;
+use crate::crd::Chirpstack;
 use k8s_openapi::api::apps::v1::{Deployment, DeploymentSpec};
 use k8s_openapi::api::core::v1::{
-    Container, ContainerPort, EnvFromSource, EnvVar, PodSpec, PodTemplateSpec, SecretEnvSource,
-    Volume, VolumeMount, ConfigMapVolumeSource, SecretVolumeSource,
+    ConfigMapVolumeSource, Container, ContainerPort, EnvFromSource, EnvVar, PodSpec,
+    PodTemplateSpec, SecretEnvSource, SecretVolumeSource, Volume, VolumeMount,
 };
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::{LabelSelector, ObjectMeta};
-use crate::crd::Chirpstack;
-use crate::error::Error;
+use kube::ResourceExt;
 use std::collections::BTreeMap;
-use crate::crd::types::WorkloadType;
 
 pub fn build(chirpstack: &Chirpstack) -> Deployment {
     assert!(chirpstack.spec.server.workload.workload_type == WorkloadType::Deployment);
 
     // Extract the name and namespace from the CRD metadata
     let crd_name = chirpstack.name_any();
-    let namespace = chirpstack.namespace().unwrap_or_else(|| "default".to_string());
+    let namespace = chirpstack
+        .namespace()
+        .unwrap_or_else(|| "default".to_string());
 
     // Construct the application name
     let app_name = format!("chirpstack-{}", crd_name);
@@ -64,19 +64,17 @@ pub fn build(chirpstack: &Chirpstack) -> Deployment {
     );
 
     // Build environment variables
-    let mut env_vars = vec![
-        EnvVar {
-            name: "CHIRPSTACK_SERVER_POD_NAME".to_string(),
-            value_from: Some(k8s_openapi::api::core::v1::EnvVarSource {
-                field_ref: Some(k8s_openapi::api::core::v1::ObjectFieldSelector {
-                    field_path: "metadata.name".to_string(),
-                    ..Default::default()
-                }),
+    let mut env_vars = vec![EnvVar {
+        name: "CHIRPSTACK_SERVER_POD_NAME".to_string(),
+        value_from: Some(k8s_openapi::api::core::v1::EnvVarSource {
+            field_ref: Some(k8s_openapi::api::core::v1::ObjectFieldSelector {
+                field_path: "metadata.name".to_string(),
                 ..Default::default()
             }),
             ..Default::default()
-        },
-    ];
+        }),
+        ..Default::default()
+    }];
 
     for env in &chirpstack.spec.server.workload.extra_env_vars {
         env_vars.push(EnvVar {
@@ -99,14 +97,12 @@ pub fn build(chirpstack: &Chirpstack) -> Deployment {
     }
 
     // Build volume mounts
-    let mut volume_mounts = vec![
-        VolumeMount {
-            name: "configuration-chirpstack".to_string(),
-            mount_path: "/etc/chirpstack".to_string(),
-            read_only: Some(true),
-            ..Default::default()
-        },
-    ];
+    let mut volume_mounts = vec![VolumeMount {
+        name: "configuration-chirpstack".to_string(),
+        mount_path: "/etc/chirpstack".to_string(),
+        read_only: Some(true),
+        ..Default::default()
+    }];
 
     for cert in &chirpstack.spec.server.configuration.certificates {
         volume_mounts.push(VolumeMount {
@@ -117,7 +113,13 @@ pub fn build(chirpstack: &Chirpstack) -> Deployment {
         });
     }
 
-    if chirpstack.spec.server.configuration.adr_plugin_files.is_some() {
+    if chirpstack
+        .spec
+        .server
+        .configuration
+        .adr_plugin_files
+        .is_some()
+    {
         volume_mounts.push(VolumeMount {
             name: "adr-plugins".to_string(),
             mount_path: "/adr-plugins".to_string(),
@@ -127,40 +129,43 @@ pub fn build(chirpstack: &Chirpstack) -> Deployment {
     }
 
     // Define container ports
-    let ports = vec![
-        ContainerPort {
-            container_port: 8080,
-            name: Some("web".to_string()),
-            ..Default::default()
-        },
-    ];
+    let ports = vec![ContainerPort {
+        container_port: 8080,
+        name: Some("web".to_string()),
+        ..Default::default()
+    }];
 
     // Build the container
     let container = Container {
         name: "chirpstack".to_string(),
         image: Some(image),
-        args: Some(vec![
-            "-c".to_string(),
-            "/etc/chirpstack".to_string(),
-        ]),
+        args: Some(vec!["-c".to_string(), "/etc/chirpstack".to_string()]),
         env: Some(env_vars),
-        env_from: if env_from.is_empty() { None } else { Some(env_from) },
+        env_from: if env_from.is_empty() {
+            None
+        } else {
+            Some(env_from)
+        },
         ports: Some(ports),
         volume_mounts: Some(volume_mounts),
         ..Default::default()
     };
 
     // Build volumes
-    let mut volumes = vec![
-        Volume {
-            name: "configuration-chirpstack".to_string(),
-            config_map: Some(ConfigMapVolumeSource {
-                name: chirpstack.spec.server.configuration.config_files.config_map_name.clone(),
-                ..Default::default()
-            }),
+    let mut volumes = vec![Volume {
+        name: "configuration-chirpstack".to_string(),
+        config_map: Some(ConfigMapVolumeSource {
+            name: chirpstack
+                .spec
+                .server
+                .configuration
+                .config_files
+                .config_map_name
+                .clone(),
             ..Default::default()
-        },
-    ];
+        }),
+        ..Default::default()
+    }];
 
     for cert in &chirpstack.spec.server.configuration.certificates {
         volumes.push(Volume {
@@ -195,7 +200,11 @@ pub fn build(chirpstack: &Chirpstack) -> Deployment {
     let pod_template_spec = PodTemplateSpec {
         metadata: Some(ObjectMeta {
             labels: Some(pod_labels),
-            annotations: if pod_annotations.is_empty() { None } else { Some(pod_annotations) },
+            annotations: if pod_annotations.is_empty() {
+                None
+            } else {
+                Some(pod_annotations)
+            },
             ..Default::default()
         }),
         spec: Some(pod_spec),

@@ -1,3 +1,4 @@
+pub mod builder;
 pub mod crd;
 pub mod error;
-pub mod builder;
+pub mod index;
