@@ -2,7 +2,7 @@ use co_rust::{
     builder,
     crd::{types::WorkloadType, Chirpstack},
     error::Error,
-    index::{Index, ObjectRef},
+    index::{Index, ObjectKey},
 };
 use env_logger;
 use futures::StreamExt;
@@ -141,9 +141,9 @@ fn error_policy(
     Action::requeue(Duration::from_secs(60))
 }
 
-fn extract_config_map_refs(chirpstack: &Chirpstack) -> Vec<ObjectRef> {
-    let mut v = Vec::<ObjectRef>::new();
-    v.push(ObjectRef {
+fn extract_config_map_refs(chirpstack: &Chirpstack) -> Vec<ObjectKey> {
+    let mut v = Vec::<ObjectKey>::new();
+    v.push(ObjectKey {
         namespace: chirpstack
             .namespace()
             .as_deref()
@@ -158,7 +158,7 @@ fn extract_config_map_refs(chirpstack: &Chirpstack) -> Vec<ObjectRef> {
             .clone(),
     });
     match &chirpstack.spec.server.configuration.adr_plugin_files {
-        Some(adr_plugin_files) => v.push(ObjectRef {
+        Some(adr_plugin_files) => v.push(ObjectKey {
             namespace: chirpstack
                 .namespace()
                 .as_deref()
@@ -171,14 +171,14 @@ fn extract_config_map_refs(chirpstack: &Chirpstack) -> Vec<ObjectRef> {
     v
 }
 
-fn extract_secret_refs(chirpstack: &Chirpstack) -> Vec<ObjectRef> {
-    let mut refs: Vec<ObjectRef> = chirpstack
+fn extract_secret_refs(chirpstack: &Chirpstack) -> Vec<ObjectKey> {
+    let mut keys: Vec<ObjectKey> = chirpstack
         .spec
         .server
         .configuration
         .env_secrets
         .iter()
-        .map(|name| ObjectRef {
+        .map(|name| ObjectKey {
             namespace: chirpstack
                 .namespace()
                 .as_deref()
@@ -187,14 +187,14 @@ fn extract_secret_refs(chirpstack: &Chirpstack) -> Vec<ObjectRef> {
             name: name.clone(),
         })
         .collect();
-    refs.extend(
+    keys.extend(
         chirpstack
             .spec
             .server
             .configuration
             .certificates
             .iter()
-            .map(|cert| ObjectRef {
+            .map(|cert| ObjectKey {
                 namespace: chirpstack
                     .namespace()
                     .as_deref()
@@ -203,7 +203,7 @@ fn extract_secret_refs(chirpstack: &Chirpstack) -> Vec<ObjectRef> {
                 name: cert.secret_name.clone(),
             }),
     );
-    refs
+    keys
 }
 
 struct Context {
