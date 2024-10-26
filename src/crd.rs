@@ -139,12 +139,15 @@ pub mod spec {
 pub mod status {
     use schemars::JsonSchema;
     use serde::{Deserialize, Serialize};
+    use super::types::WorkloadType;
 
     #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
     #[serde(rename_all = "camelCase")]
     pub struct Status {
-        pub checking: Field,
         pub reconciling: Field,
+        pub last_observed_generation: Option<i64>,
+        pub last_observed_workload_type: Option<WorkloadType>,
+        pub last_observed_config_hash: Option<String>,
     }
 
     #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]

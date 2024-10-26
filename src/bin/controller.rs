@@ -1,18 +1,17 @@
-use base64::{
-    engine::{general_purpose},
-    Engine as _,
-};
 use co_rust::{
     builder,
-    crd::{types::WorkloadType, Chirpstack},
-    error::Error,
-    index::{Index, ObjectKey},
+    builder::meta_data::MetaData,
+    crd::{types::WorkloadType, Chirpstack, status::{State}},
+    error::{Error, ReconcilerError},
+    index::{Index},
+    locks::Locks,
+    status::StatusHandler,
 };
 use env_logger;
-use futures::{future::join_all, StreamExt};
+use futures::{StreamExt};
 use k8s_openapi::api::core::v1::{ConfigMap, Secret};
 use kube::{
-    api::{Patch, PatchParams, PostParams},
+    api::{Patch, PatchParams, PostParams, DeleteParams, ListParams},
     core::{NamespaceResourceScope, Resource},
     runtime::{
         controller::{Action, Controller},
@@ -22,10 +21,52 @@ use kube::{
     Api, Client, ResourceExt,
 };
 use serde::{de::DeserializeOwned, Serialize};
-use sha2::{Digest, Sha256};
 use std::{fmt::Debug, sync::Arc, time::Duration};
+use k8s_openapi::api::apps::v1::{StatefulSet, Deployment};
 
 const CONTROLLER_NAME: &str = "chirpstack-controller";
+
+async fn delete_resource<K>(
+    client: &Client,
+    resource: &K,
+) -> Result<(), Error>
+where
+    K: Clone
+        + Debug
+        + Resource<Scope = NamespaceResourceScope>
+        + ResourceExt
+        + DeserializeOwned
+        + Serialize
+        + Send
+        + Sync,
+    K::DynamicType: Default,
+{
+    let api: Api<K> = Api::namespaced(
+        client.clone(),
+        resource.namespace().as_deref().unwrap_or("default"),
+    );
+
+    let dp = DeleteParams::default();
+
+    match api.delete(&resource.name_any(), &dp).await {
+        Ok(_) => {
+            log::info!(
+                "Deleted {}: {}",
+                K::kind(&K::DynamicType::default()),
+                resource.name_any()
+            );
+            Ok(())
+        }
+        Err(kube::Error::Api(ae)) if ae.code == 404 => {
+            log::info!(
+                "{} not found, nothing to delete",
+                K::kind(&K::DynamicType::default())
+            );
+            Ok(())
+        }
+        Err(e) => Err(Error::KubeError(e)),
+    }
+}
 
 async fn apply_resource<K>(client: &Client, resource: &K) -> Result<(), Error>
 where
@@ -61,7 +102,7 @@ where
             Ok(())
         }
         Err(kube::Error::Api(ae)) if ae.code == 404 => {
-            log::info!("{} {} not found, creating...", K::KIND, resource.name_any());
+            log::info!("{} not found, creating...", resource.name_any());
             let post_params = PostParams {
                 field_manager: Some(CONTROLLER_NAME.to_string()),
                 ..Default::default()
@@ -75,11 +116,7 @@ where
     }
 }
 
-async fn serialize_resources<T>(
-    keys: Vec<ObjectKey>,
-    namespace: &String,
-    client: Client,
-) -> Vec<String>
+async fn find_and_delete<T>(client: &Client, chirpstack: &Chirpstack) -> Result<(), Error>
 where
     T: Resource<Scope = NamespaceResourceScope>
         + Debug
@@ -92,71 +129,46 @@ where
         + k8s_openapi::Resource,
     T::DynamicType: Default,
 {
-    join_all(keys.into_iter().map(|key| {
-        let api: Api<T> = Api::namespaced(client.clone(), namespace);
-        async move {
-            let result = match api.get(&key.name).await {
-                Ok(cm) => match serde_json::to_string(&cm) {
-                    Ok(cm) => Ok(cm),
-                    Err(e) => Err(format!("{e:?}")),
-                },
-                Err(e) => Err(format!("{e:?}")),
-            };
-            match result {
-                Ok(o) => o,
-                Err(e) => {
-                    log::warn!("Unable to get {:?} {:?}: {:?}", T::KIND, key, e);
-                    "".to_string()
-                }
-            }
-        }
-    }))
-    .await
+    let meta_data = MetaData::from(chirpstack);
+    let namespace = meta_data.object_meta.namespace.unwrap_or("default".to_string());
+    let resources: Api<T> = Api::namespaced(client.clone(), &namespace);
+    let lp = ListParams::default().labels(&format!("app={0}", &meta_data.app_name));
+    for r in resources.list(&lp).await? {
+        delete_resource(client, &r).await?;
+    }
+    Ok(())
 }
 
-async fn apply(context: Arc<Context>, chirpstack: Arc<Chirpstack>) -> Result<Action, Error> {
-    let mut_secret_index = &context.secret_index;
-    let mut_config_map_index = &context.config_map_index;
-    mut_secret_index.update(chirpstack.as_ref());
-    mut_config_map_index.update(chirpstack.as_ref());
-
-    let namespace = chirpstack
-        .namespace()
-        .unwrap_or("default".to_string())
-        .clone();
-    let config_map_keys = extract_config_map_refs(&chirpstack);
-    let secret_keys = extract_secret_refs(&chirpstack);
-
-    let to_hash: Vec<String> =
-        serialize_resources::<ConfigMap>(config_map_keys, &namespace, context.client.clone())
-            .await
-            .into_iter()
-            .chain(
-                serialize_resources::<Secret>(secret_keys, &namespace, context.client.clone())
-                    .await
-                    .into_iter(),
-            )
-            .collect();
-
-    let mut hasher = Sha256::new();
-    to_hash.into_iter().for_each(|s| {
-        hasher.update(s);
-    });
-    let hash = general_purpose::STANDARD.encode(&hasher.finalize());
-
+async fn apply(context: Arc<Context>, chirpstack: Arc<Chirpstack>, status: &StatusHandler) -> Result<Action, Error> {
+    context.index.update(chirpstack.as_ref());
     let client = context.client.clone();
+
+    if status.is_different_workload_type() {
+        let result = match status.get_last_observed_workload_type() {
+            WorkloadType::StatefulSet => find_and_delete::<StatefulSet>(&client, chirpstack.as_ref()).await,
+            WorkloadType::Deployment => find_and_delete::<Deployment>(&client, chirpstack.as_ref()).await,
+        };
+        match result {
+            Ok(_) => (),
+            Err(e) => {
+                log::warn!("Unable to delete previous WorkloadType: {e:?}. Ignoring and hoping for the best.");
+                ()
+            },
+        }
+    }
+
     match chirpstack.spec.server.workload.workload_type {
         WorkloadType::Deployment => {
             apply_resource(
                 &client,
-                &builder::server::deployment::build(chirpstack.as_ref(), hash.clone()),
+                &builder::server::deployment::build(chirpstack.as_ref(), status.get_hash()),
             )
             .await
         }
         WorkloadType::StatefulSet => {
             apply_resource(
                 &client,
-                &builder::server::statefulset::build(chirpstack.as_ref(), hash.clone()),
+                &builder::server::statefulset::build(chirpstack.as_ref(), status.get_hash()),
             )
             .await
         }
@@ -171,113 +183,71 @@ async fn apply(context: Arc<Context>, chirpstack: Arc<Chirpstack>) -> Result<Act
 
 async fn cleanup(context: Arc<Context>, chirpstack: Arc<Chirpstack>) -> Result<Action, Error> {
     log::info!("running cleanup for Chirpstack {:?}", chirpstack.name_any());
-    let mut_secret_index = &context.secret_index;
-    let mut_config_map_index = &context.config_map_index;
-    mut_secret_index.remove(chirpstack.as_ref());
-    mut_config_map_index.remove(chirpstack.as_ref());
+    context.index.remove(chirpstack.as_ref());
 
     Ok(Action::await_change())
 }
 
 async fn reconcile(
-    chirpstack: Arc<Chirpstack>,
+    chirpstack_trigger: Arc<Chirpstack>,
     context: Arc<Context>,
-) -> Result<Action, kube::runtime::finalizer::Error<Error>> {
-    log::info!("reconciling Chirpstack {:?}", chirpstack.name_any());
+) -> Result<Action, ReconcilerError> {
+    log::debug!("locking reconciliation for {:?}", chirpstack_trigger.name_any());
+    let _lock = context.locks.lock(chirpstack_trigger.as_ref());
+    log::info!("reconciling Chirpstack {:?}", chirpstack_trigger.name_any());
     let api: Api<Chirpstack> = Api::namespaced(
         context.client.clone(),
-        chirpstack
+        chirpstack_trigger
             .metadata
             .namespace
             .as_deref()
             .unwrap_or("default"),
     );
-    finalizer(&api, "chirpstack-finalizer", chirpstack, |event| async {
-        match event {
-            Event::Apply(chirpstack) => apply(context, chirpstack).await,
-            Event::Cleanup(chirpstack) => cleanup(context, chirpstack).await,
+    let chirpstack = match api.get(&chirpstack_trigger.name_any()).await {
+        Ok(o) => Ok(Arc::new(o)),
+        Err(e) => {
+            log::warn!("****** REFETCH {e:?}");
+            Err(Error::from(e))
         }
-    })
-    .await
+    }?;
+    let status = StatusHandler::new(context.client.clone(), Arc::unwrap_or_clone(chirpstack.clone())).await;
+    if status.is_different_generation() || status.is_different_config_hash() {
+        let _ = status.update(State::Processing, "reconciling new generation".to_string()).await;
+        finalizer(&api, "chirpstack-finalizer", chirpstack.clone(), |event| async {
+            let result = match event {
+                Event::Apply(chirpstack) => apply(context.clone(), chirpstack, &status).await,
+                Event::Cleanup(chirpstack) => cleanup(context.clone(), chirpstack).await,
+            };
+            match result {
+                Ok(_) => {
+                    let _ = status.update(State::Done, "reconciled".to_string()).await;
+                    Ok(Action::requeue(Duration::from_secs(300)))
+                },
+                Err(e) => {
+                    let _ = status.update(State::Error, format!("{e:?}")).await;
+                    Err(e)
+                },
+            }
+        })
+        .await.map_err(ReconcilerError::from)
+    } else {
+        log::info!("no action needed, requeueing...");
+        Ok(Action::requeue(Duration::from_secs(300)))
+    }
 }
 
 fn error_policy(
     _obj: Arc<Chirpstack>,
-    _error: &kube::runtime::finalizer::Error<Error>,
+    _error: &ReconcilerError,
     _ctx: Arc<Context>,
 ) -> Action {
     Action::requeue(Duration::from_secs(60))
 }
 
-fn extract_config_map_refs(chirpstack: &Chirpstack) -> Vec<ObjectKey> {
-    let mut v = Vec::<ObjectKey>::new();
-    v.push(ObjectKey {
-        namespace: chirpstack
-            .namespace()
-            .as_deref()
-            .unwrap_or("default")
-            .to_string(),
-        name: chirpstack
-            .spec
-            .server
-            .configuration
-            .config_files
-            .config_map_name
-            .clone(),
-    });
-    match &chirpstack.spec.server.configuration.adr_plugin_files {
-        Some(adr_plugin_files) => v.push(ObjectKey {
-            namespace: chirpstack
-                .namespace()
-                .as_deref()
-                .unwrap_or("default")
-                .to_string(),
-            name: adr_plugin_files.config_map_name.clone(),
-        }),
-        None => (),
-    }
-    v
-}
-
-fn extract_secret_refs(chirpstack: &Chirpstack) -> Vec<ObjectKey> {
-    let mut keys: Vec<ObjectKey> = chirpstack
-        .spec
-        .server
-        .configuration
-        .env_secrets
-        .iter()
-        .map(|name| ObjectKey {
-            namespace: chirpstack
-                .namespace()
-                .as_deref()
-                .unwrap_or("default")
-                .to_string(),
-            name: name.clone(),
-        })
-        .collect();
-    keys.extend(
-        chirpstack
-            .spec
-            .server
-            .configuration
-            .certificates
-            .iter()
-            .map(|cert| ObjectKey {
-                namespace: chirpstack
-                    .namespace()
-                    .as_deref()
-                    .unwrap_or("default")
-                    .to_string(),
-                name: cert.secret_name.clone(),
-            }),
-    );
-    keys
-}
-
 struct Context {
     client: Client,
-    config_map_index: Index,
-    secret_index: Index,
+    index: Index,
+    locks: Locks,
 }
 
 #[tokio::main]
@@ -292,18 +262,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let context = Arc::new(Context {
         client: client,
-        config_map_index: Index::new(extract_config_map_refs),
-        secret_index: Index::new(extract_secret_refs),
+        index: Index::new(),
+        locks: Locks::new(),
     });
 
     Controller::new(chirpstack_api, watcher::Config::default())
         .watches(cm_api, watcher::Config::default(), {
-            let index = context.config_map_index.clone();
-            move |cm| index.get_affected(&ObjectKey::from(&cm))
+            let context = context.clone();
+            move |cm| context.index.get_affected(&cm)
         })
         .watches(secret_api.clone(), watcher::Config::default(), {
-            let index = context.secret_index.clone();
-            move |secret| index.get_affected(&ObjectKey::from(&secret))
+            let context = context.clone();
+            move |secret| context.index.get_affected(&secret)
         })
         .run(reconcile, error_policy, context)
         .for_each(|res| async move {

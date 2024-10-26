@@ -1,60 +1,77 @@
-use crate::crd::Chirpstack;
+use crate::{
+    crd::Chirpstack,
+};
 use dashmap::DashMap;
 use kube::{
     core::{NamespaceResourceScope, Resource},
     runtime::reflector::ObjectRef,
     ResourceExt,
+    Client,
+    Api,
 };
-use std::{collections::HashSet, sync::Arc};
-
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct ObjectKey {
-    pub name: String,
-    pub namespace: String,
-}
-
-impl<T> From<&T> for ObjectKey
-where
-    T: Resource<Scope = NamespaceResourceScope, DynamicType = ()>,
-{
-    fn from(resource: &T) -> Self {
-        ObjectKey {
-            name: resource.name_any(),
-            namespace: resource
-                .namespace()
-                .unwrap_or_else(|| "default".to_string()),
-        }
-    }
-}
-
-type IndexMap = Arc<DashMap<ObjectKey, HashSet<ObjectRef<Chirpstack>>>>;
+use futures::{future::join_all};
+use std::{collections::HashSet, fmt::Debug};
+use serde::{de::DeserializeOwned, Serialize};
+use k8s_openapi::api::core::v1::{ConfigMap, Secret};
+use sha2::{Digest, Sha256};
+use base64::{
+    engine::{general_purpose},
+    Engine as _,
+};
+use k8s_openapi::Resource as KubeResource;
 
 #[derive(Clone, Debug)]
 pub struct Index {
-    pub get_objectkeys: fn(&Chirpstack) -> Vec<ObjectKey>,
+    index: DashMap::<ObjectKey, HashSet<ObjectRef<Chirpstack>>>
+}
 
-    index: IndexMap,
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ObjectKey {
+    pub kind: String,
+    pub namespace: String,
+    pub name: String,
 }
 
 impl Index {
-    pub fn new(get_objectkeys: fn(&Chirpstack) -> Vec<ObjectKey>) -> Index {
-        Index {
-            get_objectkeys: get_objectkeys,
-            index: Arc::new(DashMap::new()),
+    pub fn new() -> Index {
+        Index{
+            index: DashMap::new()
         }
     }
 
     pub fn update(&self, chirpstack: &Chirpstack) {
+        let config_map_names = extract_config_map_names(&chirpstack);
+        let secret_names = extract_secret_names(&chirpstack);
+        let namespace = chirpstack
+            .namespace()
+            .unwrap_or("default".to_string())
+            .clone();
+
+        let mut keys = Vec::<ObjectKey>::with_capacity(config_map_names.len() + secret_names.len());
+        keys.extend(config_map_names.iter().map(
+            |name| ObjectKey{
+                kind: ConfigMap::KIND.to_string(),
+                namespace: namespace.clone(),
+                name: name.clone(),
+            }
+        ));
+        keys.extend(secret_names.iter().map(
+            |name| ObjectKey{
+                kind: Secret::KIND.to_string(),
+                namespace: namespace.clone(),
+                name: name.clone(),
+            }
+        ));
+
         let chirpstack_ref = ObjectRef::from_obj(chirpstack);
-        let objectkeys = (self.get_objectkeys)(&chirpstack);
 
         self.index.iter_mut().for_each(|mut entry| {
             entry.value_mut().remove(&chirpstack_ref);
         });
 
-        for objectkey in objectkeys {
+        for key in keys {
             self.index
-                .entry(objectkey)
+                .entry(key)
                 .or_insert_with(HashSet::new)
                 .insert(chirpstack_ref.clone());
         }
@@ -68,10 +85,136 @@ impl Index {
         });
     }
 
-    pub fn get_affected(&self, objectkey: &ObjectKey) -> Vec<ObjectRef<Chirpstack>> {
-        match self.index.get(objectkey) {
+    pub fn get_affected<T>(&self, resource: &T) -> Vec<ObjectRef<Chirpstack>>
+    where
+        T: Resource<Scope = NamespaceResourceScope>
+            + Debug
+            + Clone
+            + ResourceExt
+            + DeserializeOwned
+            + Serialize
+            + Send
+            + Sync
+            + k8s_openapi::Resource,
+        T::DynamicType: Default,
+    {
+        let namespace = resource
+            .namespace()
+            .unwrap_or("default".to_string())
+            .clone();
+        let key = ObjectKey{
+            kind: T::KIND.to_string(),
+            namespace,
+            name: resource.name_any()
+        };
+        match self.index.get(&key) {
             Some(item) => item.value().into_iter().cloned().collect(),
             None => Vec::<ObjectRef<Chirpstack>>::new(),
         }
     }
+}
+
+fn extract_config_map_names(chirpstack: &Chirpstack) -> Vec<String> {
+    let mut names = Vec::<String>::new();
+    names.push(chirpstack
+            .spec
+            .server
+            .configuration
+            .config_files
+            .config_map_name
+            .clone(),
+    );
+    match &chirpstack.spec.server.configuration.adr_plugin_files {
+        Some(adr_plugin_files) => names.push(adr_plugin_files.config_map_name.clone()),
+        None => (),
+    }
+    names
+}
+
+fn extract_secret_names(chirpstack: &Chirpstack) -> Vec<String> {
+    let mut names: Vec<String> = chirpstack
+        .spec
+        .server
+        .configuration
+        .env_secrets
+        .iter()
+        .map(|name| name.clone())
+        .collect();
+    names.extend(
+        chirpstack
+            .spec
+            .server
+            .configuration
+            .certificates
+            .iter()
+            .map(|cert| cert.secret_name.clone())
+    );
+    names
+}
+
+async fn serialize_resources<T>(
+    names: Vec<String>,
+    namespace: &String,
+    client: Client,
+) -> Vec<String>
+where
+    T: Resource<Scope = NamespaceResourceScope>
+        + Debug
+        + Clone
+        + ResourceExt
+        + DeserializeOwned
+        + Serialize
+        + Send
+        + Sync
+        + k8s_openapi::Resource,
+    T::DynamicType: Default,
+{
+    join_all(names.into_iter().map(|name| {
+        let api: Api<T> = Api::namespaced(client.clone(), namespace);
+        async move {
+            let result = match api.get(&name).await {
+                Ok(resource) =>
+                    match serde_json::to_string(&resource) {
+                        Ok(json) => Ok(json),
+                        Err(e) => Err(format!("{e:?}")),
+                    },
+                Err(e) => Err(format!("{e:?}")),
+            };
+            match result {
+                Ok(o) => o,
+                Err(e) => {
+                    log::warn!("Unable to get {:?} {:?}: {:?}", T::KIND, name, e);
+                    "".to_string()
+                }
+            }
+        }
+    }))
+    .await
+}
+
+pub async fn determine_hash(client: &Client, chirpstack: &Chirpstack) -> String {
+    let namespace = chirpstack
+        .namespace()
+        .unwrap_or("default".to_string())
+        .clone();
+    let config_map_names = extract_config_map_names(chirpstack);
+    let secret_names = extract_secret_names(chirpstack);
+
+    let to_hash: Vec<String> =
+        serialize_resources::<ConfigMap>(config_map_names, &namespace, client.clone())
+            .await
+            .into_iter()
+            .chain(
+                serialize_resources::<Secret>(secret_names, &namespace, client.clone())
+                    .await
+                    .into_iter(),
+            )
+            .collect();
+
+    let mut hasher = Sha256::new();
+    to_hash.into_iter().for_each(|s| {
+        hasher.update(s);
+    });
+    let hash = general_purpose::STANDARD.encode(&hasher.finalize());
+    hash
 }

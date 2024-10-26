@@ -1,11 +1,10 @@
-use thiserror::Error;
+use kube_runtime::finalizer;
 
-#[derive(Debug, Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("Kubernetes API error: {0}")]
     KubeError(#[from] kube::Error),
 
-    // You can add other variants as needed
     #[error("Serialization error: {0}")]
     SerializationError(#[from] serde_json::Error),
 
@@ -13,8 +12,11 @@ pub enum Error {
     Other(String),
 }
 
-//impl fmt::Display for Error {
-//    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-//        write!(f, "{self:?}")
-//    }
-//}
+#[derive(Debug, thiserror::Error)]
+pub enum ReconcilerError {
+    #[error("Error: {0}")]
+    Error(#[from] Error),
+
+    #[error("Finalizer error: {0}")]
+    FinalizerError(#[from] finalizer::Error<Error>),
+}
