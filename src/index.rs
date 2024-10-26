@@ -31,6 +31,7 @@ where
 
 type IndexHashMap = Arc<RwLock<HashMap<ObjectRef, HashSet<ObjectRef>>>>;
 
+#[derive(Debug)]
 pub struct Index {
     pub get_objectrefs: fn(&Chirpstack) -> Vec<ObjectRef>,
 

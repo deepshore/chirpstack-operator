@@ -6,12 +6,8 @@ use co_rust::{
 };
 use env_logger;
 use futures::StreamExt;
-use k8s_openapi::api::{
-    apps::v1::{Deployment, StatefulSet},
-    core::v1::Service,
-};
 use kube::{
-    api::{DeleteParams, ListParams, Patch, PatchParams, PostParams},
+    api::{Patch, PatchParams, PostParams},
     core::{NamespaceResourceScope, Resource},
     runtime::{
         controller::{Action, Controller},
@@ -112,43 +108,7 @@ async fn cleanup(context: Arc<Context>, chirpstack: Arc<Chirpstack>) -> Result<A
     mut_secret_index.remove(chirpstack.as_ref()).await;
     mut_config_map_index.remove(chirpstack.as_ref()).await;
 
-    let cr_name = chirpstack.name_any();
-    let namespace = chirpstack.namespace().unwrap_or("default".to_string());
-
-    // Define the label selector
-    let lp = ListParams::default().labels(&format!("app=chirpstack-{}", cr_name));
-
-    // Delete Deployments
-    let deployments: Api<Deployment> = Api::namespaced(context.client.clone(), &namespace);
-    let dl = deployments.list(&lp).await?;
-    log::info!("deployments: {dl:?}");
-    for d in dl {
-        log::info!("{d:?}");
-        deployments
-            .delete(&d.name_any(), &DeleteParams::default())
-            .await?;
-    }
-
-    // Delete StatefulSets
-    let statefulsets: Api<StatefulSet> = Api::namespaced(context.client.clone(), &namespace);
-    let ssl = statefulsets.list(&lp).await?;
-    log::info!("statefulsets: {ssl:?}");
-    for ss in ssl {
-        log::info!("{ss:?}");
-        statefulsets
-            .delete(&ss.name_any(), &DeleteParams::default())
-            .await?;
-    }
-
-    // Delete Services
-    let services: Api<Service> = Api::namespaced(context.client.clone(), &namespace);
-    for svc in services.list(&lp).await? {
-        services
-            .delete(&svc.name_any(), &DeleteParams::default())
-            .await?;
-    }
-
-    Ok(Action::requeue(Duration::from_secs(300)))
+    Ok(Action::await_change())
 }
 
 async fn reconcile(

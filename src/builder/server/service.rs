@@ -1,26 +1,9 @@
 use k8s_openapi::api::core::v1::{Service, ServicePort, ServiceSpec};
-use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
-use kube::ResourceExt;
-use std::collections::BTreeMap;
-
 use crate::crd::{spec::Chirpstack, types::ServiceType};
+use crate::builder::meta_data::MetaData;
 
 pub fn build(chirpstack: &Chirpstack) -> Service {
-    let crd_name = chirpstack.name_any();
-    let namespace = chirpstack.namespace().unwrap_or("default".to_string());
-    let app_name = format!("chirpstack-{}", crd_name);
-
-    // Initialize labels
-    let mut labels = BTreeMap::new();
-    labels.insert("app".to_string(), app_name.clone());
-
-    // Build metadata
-    let metadata = ObjectMeta {
-        name: Some(app_name.clone()),
-        namespace: Some(namespace.clone()),
-        labels: Some(labels.clone()),
-        ..Default::default()
-    };
+    let meta_data = MetaData::from(chirpstack);
 
     // Build service ports
     let mut ports = vec![ServicePort {
@@ -43,13 +26,13 @@ pub fn build(chirpstack: &Chirpstack) -> Service {
     let spec = ServiceSpec {
         type_: Some(chirpstack.spec.server.service.service_type.to_string()),
         ports: Some(ports),
-        selector: Some(labels),
+        selector: Some(meta_data.labels.clone()),
         ..Default::default()
     };
 
     // Build the Service
     Service {
-        metadata,
+        metadata: meta_data.object_meta.clone(),
         spec: Some(spec),
         ..Default::default()
     }

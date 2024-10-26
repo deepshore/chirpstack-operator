@@ -5,42 +5,17 @@ use k8s_openapi::api::core::v1::{
     ConfigMapVolumeSource, Container, ContainerPort, EnvFromSource, EnvVar, PodSpec,
     PodTemplateSpec, SecretEnvSource, SecretVolumeSource, Volume, VolumeMount,
 };
-use k8s_openapi::apimachinery::pkg::apis::meta::v1::{LabelSelector, ObjectMeta};
-use kube::ResourceExt;
+use k8s_openapi::apimachinery::pkg::apis::meta::v1::{ObjectMeta};
 use std::collections::BTreeMap;
+use crate::builder::meta_data::MetaData;
 
 pub fn build(chirpstack: &Chirpstack) -> Deployment {
     assert!(chirpstack.spec.server.workload.workload_type == WorkloadType::Deployment);
 
-    // Extract the name and namespace from the CRD metadata
-    let crd_name = chirpstack.name_any();
-    let namespace = chirpstack
-        .namespace()
-        .unwrap_or_else(|| "default".to_string());
-
-    // Construct the application name
-    let app_name = format!("chirpstack-{}", crd_name);
-
-    // Initialize labels
-    let mut labels = BTreeMap::new();
-    labels.insert("app".to_string(), app_name.clone());
-
-    // Build the Deployment metadata
-    let metadata = ObjectMeta {
-        name: Some(app_name.clone()),
-        namespace: Some(namespace.clone()),
-        labels: Some(labels.clone()),
-        ..Default::default()
-    };
-
-    // Build the selector
-    let selector = LabelSelector {
-        match_labels: Some(labels.clone()),
-        ..Default::default()
-    };
+    let meta_data = MetaData::from(chirpstack);
 
     // Build pod labels
-    let mut pod_labels = labels.clone();
+    let mut pod_labels = meta_data.labels.clone();
     if !chirpstack.spec.server.workload.pod_labels.is_empty() {
         for label in &chirpstack.spec.server.workload.pod_labels {
             pod_labels.insert(label.key.clone(), label.value.clone());
@@ -213,14 +188,14 @@ pub fn build(chirpstack: &Chirpstack) -> Deployment {
     // Build the DeploymentSpec
     let deployment_spec = DeploymentSpec {
         replicas: Some(chirpstack.spec.server.workload.replicas),
-        selector,
+        selector: meta_data.label_selector.clone(),
         template: pod_template_spec,
         ..Default::default()
     };
 
     // Assemble the Deployment
     Deployment {
-        metadata,
+        metadata: meta_data.object_meta.clone(),
         spec: Some(deployment_spec),
         ..Default::default()
     }

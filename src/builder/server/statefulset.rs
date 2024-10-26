@@ -5,42 +5,17 @@ use k8s_openapi::api::core::v1::{
     ConfigMapVolumeSource, Container, ContainerPort, EnvFromSource, EnvVar, PodSpec,
     PodTemplateSpec, SecretEnvSource, SecretVolumeSource, Volume, VolumeMount,
 };
-use k8s_openapi::apimachinery::pkg::apis::meta::v1::{LabelSelector, ObjectMeta};
-use kube::ResourceExt;
+use k8s_openapi::apimachinery::pkg::apis::meta::v1::{ObjectMeta};
+use crate::builder::meta_data::MetaData;
 use std::collections::BTreeMap;
 
 pub fn build(chirpstack: &Chirpstack) -> StatefulSet {
     assert!(chirpstack.spec.server.workload.workload_type == WorkloadType::StatefulSet);
 
-    // Extract the name and namespace from the CRD metadata
-    let crd_name = chirpstack.name_any();
-    let namespace = chirpstack
-        .namespace()
-        .unwrap_or_else(|| "default".to_string());
-
-    // Construct the application name
-    let app_name = format!("chirpstack-{}", crd_name);
-
-    // Initialize labels
-    let mut labels = BTreeMap::new();
-    labels.insert("app".to_string(), app_name.clone());
-
-    // Build the StatefulSet metadata
-    let metadata = ObjectMeta {
-        name: Some(app_name.clone()),
-        namespace: Some(namespace.clone()),
-        labels: Some(labels.clone()),
-        ..Default::default()
-    };
-
-    // Build the selector
-    let selector = LabelSelector {
-        match_labels: Some(labels.clone()),
-        ..Default::default()
-    };
+    let meta_data = MetaData::from(chirpstack);
 
     // Build pod labels
-    let mut pod_labels = labels.clone();
+    let mut pod_labels = meta_data.labels.clone();
     if !chirpstack.spec.server.workload.pod_labels.is_empty() {
         for label in &chirpstack.spec.server.workload.pod_labels {
             pod_labels.insert(label.key.clone(), label.value.clone());
@@ -213,15 +188,15 @@ pub fn build(chirpstack: &Chirpstack) -> StatefulSet {
     // Build the StatefulSetSpec
     let statefulset_spec = StatefulSetSpec {
         replicas: Some(chirpstack.spec.server.workload.replicas),
-        selector,
-        service_name: app_name.clone(),
+        selector: meta_data.label_selector.clone(),
+        service_name: meta_data.app_name.clone(),
         template: pod_template_spec,
         ..Default::default()
     };
 
     // Assemble the StatefulSet
     StatefulSet {
-        metadata,
+        metadata: meta_data.object_meta.clone(),
         spec: Some(statefulset_spec),
         ..Default::default()
     }
