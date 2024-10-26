@@ -1,6 +1,6 @@
 COPY_MANIFESTS := role.yaml role_binding.yaml
 
-default: manifests
+default: build
 
 manifest:
 	mkdir -p manifest
@@ -13,6 +13,9 @@ manifest/crd.yaml: manifests src/crd.rs
 	cargo run --bin make-crd-manifest | yq -o yaml -P > manifest/crd.yaml || rm -f manifest/crd.yaml
 
 manifests: $(addprefix manifest/,$(COPY_MANIFESTS)) manifest/crd.yaml
+
+build:
+	cargo build
 
 run-controller: install
 	cargo build

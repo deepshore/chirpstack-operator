@@ -2,7 +2,7 @@ use co_rust::{
     builder,
     crd::{types::WorkloadType, Chirpstack},
     error::Error,
-    index::Index,
+    index::{Index, ObjectRef},
 };
 use env_logger;
 use futures::StreamExt;
@@ -12,7 +12,7 @@ use k8s_openapi::api::{
 };
 use kube::{
     api::{DeleteParams, ListParams, Patch, PatchParams, PostParams},
-    core::{NamespaceResourceScope, Resource as KubeResource},
+    core::{NamespaceResourceScope, Resource},
     runtime::{
         controller::{Action, Controller},
         finalizer::{finalizer, Event},
@@ -27,7 +27,7 @@ const CONTROLLER_NAME: &str = "chirpstack-operator";
 
 async fn apply_resource<K>(client: &Client, resource: &K) -> Result<(), Error>
 where
-    K: KubeResource<Scope = NamespaceResourceScope, DynamicType = ()>
+    K: Resource<Scope = NamespaceResourceScope>
         + Debug
         + Clone
         + ResourceExt
@@ -181,36 +181,64 @@ fn error_policy(
     Action::requeue(Duration::from_secs(60))
 }
 
-fn extract_config_map_names(chirpstack: &Chirpstack) -> Vec<String> {
-    let mut v = Vec::<String>::new();
-    v.push(
-        chirpstack
+fn extract_config_map_refs(chirpstack: &Chirpstack) -> Vec<ObjectRef> {
+    let mut v = Vec::<ObjectRef>::new();
+    v.push(ObjectRef {
+        namespace: chirpstack
+            .namespace()
+            .as_deref()
+            .unwrap_or("default").to_string(),
+        name: chirpstack
             .spec
             .server
             .configuration
             .config_files
             .config_map_name
             .clone(),
-    );
+    });
     match &chirpstack.spec.server.configuration.adr_plugin_files {
-        Some(adr_plugin_files) => v.push(adr_plugin_files.config_map_name.clone()),
+        Some(adr_plugin_files) => v.push(ObjectRef {
+            namespace: chirpstack
+                .namespace()
+                .as_deref()
+                .unwrap_or("default").to_string(),
+            name: adr_plugin_files.config_map_name.clone(),
+        }),
         None => (),
     }
     v
 }
 
-fn extract_secret_names(chirpstack: &Chirpstack) -> Vec<String> {
-    let mut names = chirpstack.spec.server.configuration.env_secrets.clone();
-    names.extend(
+fn extract_secret_refs(chirpstack: &Chirpstack) -> Vec<ObjectRef> {
+    let mut refs: Vec<ObjectRef> = chirpstack
+        .spec
+        .server
+        .configuration
+        .env_secrets
+        .iter()
+        .map(|name| ObjectRef {
+            namespace: chirpstack
+                .namespace()
+                .as_deref()
+                .unwrap_or("default").to_string(),
+            name: name.clone(),
+        }).collect();
+    refs.extend(
         chirpstack
             .spec
             .server
             .configuration
             .certificates
             .iter()
-            .map(|item| item.name.clone()),
+            .map(|cert| ObjectRef {
+                namespace: chirpstack
+                    .namespace()
+                    .as_deref()
+                    .unwrap_or("default").to_string(),
+                name: cert.secret_name.clone(),
+            }),
     );
-    names
+    refs
 }
 
 struct Context {
@@ -228,8 +256,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let api: Api<Chirpstack> = Api::all(client.clone());
     let context = Arc::new(Context {
         client: client,
-        secret_index: Index::new(extract_secret_names),
-        config_map_index: Index::new(extract_config_map_names),
+        secret_index: Index::new(extract_secret_refs),
+        config_map_index: Index::new(extract_config_map_refs),
     });
 
     Controller::new(api, watcher::Config::default())
