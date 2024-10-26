@@ -1,14 +1,11 @@
 use crate::crd::Chirpstack;
+use dashmap::DashMap;
 use kube::{
-    runtime::reflector::ObjectRef,
     core::{NamespaceResourceScope, Resource},
+    runtime::reflector::ObjectRef,
     ResourceExt,
 };
-use std::{
-    collections::{HashSet},
-    sync::Arc,
-};
-use dashmap::DashMap;
+use std::{collections::HashSet, sync::Arc};
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct ObjectKey {

@@ -1,3 +1,7 @@
+use base64::{
+    engine::{general_purpose},
+    Engine as _,
+};
 use co_rust::{
     builder,
     crd::{types::WorkloadType, Chirpstack},
@@ -20,7 +24,6 @@ use kube::{
 use serde::{de::DeserializeOwned, Serialize};
 use sha2::{Digest, Sha256};
 use std::{fmt::Debug, sync::Arc, time::Duration};
-use base64::{Engine as _, engine::{self, general_purpose}, alphabet};
 
 const CONTROLLER_NAME: &str = "chirpstack-controller";
 
