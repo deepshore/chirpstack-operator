@@ -5,10 +5,10 @@ use kube::{
     ResourceExt,
 };
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{HashSet},
     sync::Arc,
 };
-use tokio::sync::RwLock;
+use dashmap::DashMap;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct ObjectKey {
@@ -30,53 +30,50 @@ where
     }
 }
 
-type IndexHashMap = Arc<RwLock<HashMap<ObjectKey, HashSet<ObjectRef<Chirpstack>>>>>;
+type IndexMap = Arc<DashMap<ObjectKey, HashSet<ObjectRef<Chirpstack>>>>;
 
 #[derive(Debug)]
 pub struct Index {
     pub get_objectkeys: fn(&Chirpstack) -> Vec<ObjectKey>,
 
-    index: IndexHashMap,
+    index: IndexMap,
 }
 
 impl Index {
     pub fn new(get_objectkeys: fn(&Chirpstack) -> Vec<ObjectKey>) -> Index {
         Index {
             get_objectkeys: get_objectkeys,
-            index: Arc::new(RwLock::new(HashMap::new())),
+            index: Arc::new(DashMap::new()),
         }
     }
 
-    pub async fn update(&self, chirpstack: &Chirpstack) {
+    pub fn update(&self, chirpstack: &Chirpstack) {
         let chirpstack_ref = ObjectRef::from_obj(chirpstack);
         let objectkeys = (self.get_objectkeys)(&chirpstack);
-        let mut mut_index = self.index.write().await;
 
-        mut_index.values_mut().for_each(|chirpstack_refs| {
-            chirpstack_refs.remove(&chirpstack_ref);
+        self.index.iter_mut().for_each(|mut entry| {
+            entry.value_mut().remove(&chirpstack_ref);
         });
 
         for objectkey in objectkeys {
-            mut_index
+            self.index
                 .entry(objectkey)
                 .or_insert_with(HashSet::new)
                 .insert(chirpstack_ref.clone());
         }
     }
 
-    pub async fn remove(&self, chirpstack: &Chirpstack) {
+    pub fn remove(&self, chirpstack: &Chirpstack) {
         let chirpstack_ref = ObjectRef::from_obj(chirpstack);
-        let mut mut_index = self.index.write().await;
 
-        mut_index.values_mut().for_each(|chirpstack_refs| {
-            chirpstack_refs.remove(&chirpstack_ref);
+        self.index.iter_mut().for_each(|mut entry| {
+            entry.value_mut().remove(&chirpstack_ref);
         });
     }
 
-    pub async fn get_affected(&self, objectkey: &ObjectKey) -> Vec<ObjectRef<Chirpstack>> {
-        let index = self.index.read().await;
-        match index.get(objectkey) {
-            Some(item) => item.into_iter().cloned().collect(),
+    pub fn get_affected(&self, objectkey: &ObjectKey) -> Vec<ObjectRef<Chirpstack>> {
+        match self.index.get(objectkey) {
+            Some(item) => item.value().into_iter().cloned().collect(),
             None => Vec::<ObjectRef<Chirpstack>>::new(),
         }
     }

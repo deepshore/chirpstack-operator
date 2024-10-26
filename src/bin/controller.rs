@@ -73,8 +73,8 @@ async fn apply(context: Arc<Context>, chirpstack: Arc<Chirpstack>) -> Result<Act
     log::info!("APPLY {chirpstack:?}");
     let mut_secret_index = &context.secret_index;
     let mut_config_map_index = &context.config_map_index;
-    mut_secret_index.update(chirpstack.as_ref()).await;
-    mut_config_map_index.update(chirpstack.as_ref()).await;
+    mut_secret_index.update(chirpstack.as_ref());
+    mut_config_map_index.update(chirpstack.as_ref());
 
     let client = context.client.clone();
     match chirpstack.spec.server.workload.workload_type {
@@ -105,8 +105,8 @@ async fn cleanup(context: Arc<Context>, chirpstack: Arc<Chirpstack>) -> Result<A
     log::info!("**** CLEANUP");
     let mut_secret_index = &context.secret_index;
     let mut_config_map_index = &context.config_map_index;
-    mut_secret_index.remove(chirpstack.as_ref()).await;
-    mut_config_map_index.remove(chirpstack.as_ref()).await;
+    mut_secret_index.remove(chirpstack.as_ref());
+    mut_config_map_index.remove(chirpstack.as_ref());
 
     Ok(Action::await_change())
 }
