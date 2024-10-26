@@ -32,7 +32,7 @@ where
 
 type IndexMap = Arc<DashMap<ObjectKey, HashSet<ObjectRef<Chirpstack>>>>;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Index {
     pub get_objectkeys: fn(&Chirpstack) -> Vec<ObjectKey>,
 

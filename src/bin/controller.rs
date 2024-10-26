@@ -18,6 +18,7 @@ use kube::{
 };
 use serde::{de::DeserializeOwned, Serialize};
 use std::{fmt::Debug, sync::Arc, time::Duration};
+use k8s_openapi::api::core::v1::{ConfigMap, Secret};
 
 const CONTROLLER_NAME: &str = "chirpstack-operator";
 
@@ -208,8 +209,8 @@ fn extract_secret_refs(chirpstack: &Chirpstack) -> Vec<ObjectKey> {
 
 struct Context {
     client: Client,
-    secret_index: Index,
     config_map_index: Index,
+    secret_index: Index,
 }
 
 #[tokio::main]
@@ -218,14 +219,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     log::info!("starting...");
 
     let client = Client::try_default().await?;
-    let api: Api<Chirpstack> = Api::all(client.clone());
+    let chirpstack_api: Api<Chirpstack> = Api::all(client.clone());
+    let cm_api = Api::<ConfigMap>::all(client.clone());
+    let secret_api = Api::<Secret>::all(client.clone());
+
     let context = Arc::new(Context {
         client: client,
-        secret_index: Index::new(extract_secret_refs),
         config_map_index: Index::new(extract_config_map_refs),
+        secret_index: Index::new(extract_secret_refs),
     });
 
-    Controller::new(api, watcher::Config::default())
+    Controller::new(chirpstack_api, watcher::Config::default())
+        .watches(cm_api, watcher::Config::default(), {
+            let index = context.config_map_index.clone();
+            move |cm| {
+                index.get_affected(&ObjectKey::from(&cm))
+            }
+        })
+        .watches(secret_api.clone(), watcher::Config::default(), {
+            let index = context.secret_index.clone();
+            move |secret| {
+                index.get_affected(&ObjectKey::from(&secret))
+            }
+        })
         .run(reconcile, error_policy, context)
         .for_each(|res| async move {
             match res {
