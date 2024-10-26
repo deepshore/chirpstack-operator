@@ -21,53 +21,9 @@ use kube::{
     Api, Client, ResourceExt,
 };
 use serde::{de::DeserializeOwned, Serialize};
-use std::{
-    fmt::Debug,
-    sync::Arc,
-    time::Duration,
-};
+use std::{fmt::Debug, sync::Arc, time::Duration};
 
 const CONTROLLER_NAME: &str = "chirpstack-operator";
-
-//async fn delete_resource<K>(client: &Client, resource: &K) -> Result<(), Error>
-//where
-//    K: Clone
-//        + Debug
-//        + KubeResource<Scope = NamespaceResourceScope, DynamicType = ()>
-//        + ResourceExt
-//        + DeserializeOwned
-//        + Serialize
-//        + Send
-//        + Sync
-//        + 'static,
-//    K::DynamicType: Default,
-//{
-//    let api: Api<K> = Api::namespaced(
-//        client.clone(),
-//        resource.namespace().as_deref().unwrap_or("default"),
-//    );
-//
-//    let dp = DeleteParams::default();
-//
-//    match api.delete(&resource.name_any(), &dp).await {
-//        Ok(_status) => {
-//            log::info!(
-//                "Deleted {}: {}",
-//                K::kind(&K::DynamicType::default()),
-//                resource.name_any()
-//            );
-//            Ok(())
-//        }
-//        Err(kube::Error::Api(ae)) if ae.code == 404 => {
-//            log::info!(
-//                "{} not found, nothing to delete",
-//                K::kind(&K::DynamicType::default())
-//            );
-//            Ok(())
-//        }
-//        Err(e) => Err(Error::KubeError(e)),
-//    }
-//}
 
 async fn apply_resource<K>(client: &Client, resource: &K) -> Result<(), Error>
 where
