@@ -9,7 +9,7 @@ use k8s_openapi::api::core::v1::{
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use std::collections::BTreeMap;
 
-pub fn build(chirpstack: &Chirpstack) -> StatefulSet {
+pub fn build(chirpstack: &Chirpstack, dependent_hash: String) -> StatefulSet {
     assert!(chirpstack.spec.server.workload.workload_type == WorkloadType::StatefulSet);
 
     let meta_data = MetaData::from(chirpstack);
@@ -29,6 +29,7 @@ pub fn build(chirpstack: &Chirpstack) -> StatefulSet {
             pod_annotations.insert(annotation.key.clone(), annotation.value.clone());
         }
     }
+    pod_annotations.insert("dependent.resources.hash".to_string(), dependent_hash);
 
     // Construct the container image
     let image = format!(
