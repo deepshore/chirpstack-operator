@@ -147,7 +147,8 @@ fn extract_config_map_refs(chirpstack: &Chirpstack) -> Vec<ObjectRef> {
         namespace: chirpstack
             .namespace()
             .as_deref()
-            .unwrap_or("default").to_string(),
+            .unwrap_or("default")
+            .to_string(),
         name: chirpstack
             .spec
             .server
@@ -161,7 +162,8 @@ fn extract_config_map_refs(chirpstack: &Chirpstack) -> Vec<ObjectRef> {
             namespace: chirpstack
                 .namespace()
                 .as_deref()
-                .unwrap_or("default").to_string(),
+                .unwrap_or("default")
+                .to_string(),
             name: adr_plugin_files.config_map_name.clone(),
         }),
         None => (),
@@ -180,9 +182,11 @@ fn extract_secret_refs(chirpstack: &Chirpstack) -> Vec<ObjectRef> {
             namespace: chirpstack
                 .namespace()
                 .as_deref()
-                .unwrap_or("default").to_string(),
+                .unwrap_or("default")
+                .to_string(),
             name: name.clone(),
-        }).collect();
+        })
+        .collect();
     refs.extend(
         chirpstack
             .spec
@@ -194,7 +198,8 @@ fn extract_secret_refs(chirpstack: &Chirpstack) -> Vec<ObjectRef> {
                 namespace: chirpstack
                     .namespace()
                     .as_deref()
-                    .unwrap_or("default").to_string(),
+                    .unwrap_or("default")
+                    .to_string(),
                 name: cert.secret_name.clone(),
             }),
     );

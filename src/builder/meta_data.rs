@@ -1,7 +1,7 @@
-use k8s_openapi::apimachinery::pkg::apis::meta::v1::{ObjectMeta, LabelSelector, OwnerReference};
-use std::collections::BTreeMap;
 use crate::crd::Chirpstack;
+use k8s_openapi::apimachinery::pkg::apis::meta::v1::{LabelSelector, ObjectMeta, OwnerReference};
 use kube::{Resource, ResourceExt};
+use std::collections::BTreeMap;
 
 #[derive(Clone, Debug)]
 pub struct MetaData {
@@ -11,8 +11,7 @@ pub struct MetaData {
     pub object_meta: ObjectMeta,
 }
 
-impl From<&Chirpstack> for MetaData
-{
+impl From<&Chirpstack> for MetaData {
     fn from(chirpstack: &Chirpstack) -> Self {
         let app_name = format!("chirpstack-{}", chirpstack.name_any());
 
@@ -32,7 +31,9 @@ impl From<&Chirpstack> for MetaData
             block_owner_deletion: Some(true),
         };
 
-        let namespace = chirpstack.namespace().unwrap_or_else(|| "default".to_string());
+        let namespace = chirpstack
+            .namespace()
+            .unwrap_or_else(|| "default".to_string());
         let object_meta = ObjectMeta {
             name: Some(app_name.clone()),
             namespace: Some(namespace),
@@ -41,8 +42,7 @@ impl From<&Chirpstack> for MetaData
             ..Default::default()
         };
 
-
-        MetaData{
+        MetaData {
             app_name,
             labels,
             label_selector,

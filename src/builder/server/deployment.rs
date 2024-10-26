@@ -1,3 +1,4 @@
+use crate::builder::meta_data::MetaData;
 use crate::crd::types::WorkloadType;
 use crate::crd::Chirpstack;
 use k8s_openapi::api::apps::v1::{Deployment, DeploymentSpec};
@@ -5,9 +6,8 @@ use k8s_openapi::api::core::v1::{
     ConfigMapVolumeSource, Container, ContainerPort, EnvFromSource, EnvVar, PodSpec,
     PodTemplateSpec, SecretEnvSource, SecretVolumeSource, Volume, VolumeMount,
 };
-use k8s_openapi::apimachinery::pkg::apis::meta::v1::{ObjectMeta};
+use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use std::collections::BTreeMap;
-use crate::builder::meta_data::MetaData;
 
 pub fn build(chirpstack: &Chirpstack) -> Deployment {
     assert!(chirpstack.spec.server.workload.workload_type == WorkloadType::Deployment);

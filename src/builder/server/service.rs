@@ -1,6 +1,6 @@
-use k8s_openapi::api::core::v1::{Service, ServicePort, ServiceSpec};
-use crate::crd::{spec::Chirpstack, types::ServiceType};
 use crate::builder::meta_data::MetaData;
+use crate::crd::{spec::Chirpstack, types::ServiceType};
+use k8s_openapi::api::core::v1::{Service, ServicePort, ServiceSpec};
 
 pub fn build(chirpstack: &Chirpstack) -> Service {
     let meta_data = MetaData::from(chirpstack);

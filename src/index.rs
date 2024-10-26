@@ -1,7 +1,7 @@
 use crate::crd::Chirpstack;
 use kube::{
-    ResourceExt,
     core::{NamespaceResourceScope, Resource},
+    ResourceExt,
 };
 use std::{
     collections::{HashMap, HashSet},
@@ -17,7 +17,7 @@ pub struct ObjectRef {
 
 impl<T> From<&T> for ObjectRef
 where
-    T: Resource<Scope = NamespaceResourceScope, DynamicType = ()>
+    T: Resource<Scope = NamespaceResourceScope, DynamicType = ()>,
 {
     fn from(resource: &T) -> Self {
         ObjectRef {
