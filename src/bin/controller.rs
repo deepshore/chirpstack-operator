@@ -140,7 +140,6 @@ where
 }
 
 async fn apply(context: Arc<Context>, chirpstack: Arc<Chirpstack>, status: &StatusHandler) -> Result<Action, Error> {
-    context.index.update(chirpstack.as_ref());
     let client = context.client.clone();
 
     if status.is_different_workload_type() {
@@ -210,6 +209,7 @@ async fn reconcile(
             Err(Error::from(e))
         }
     }?;
+    context.index.update(chirpstack.as_ref());
     let status = StatusHandler::new(context.client.clone(), Arc::unwrap_or_clone(chirpstack.clone())).await;
     if status.is_different_generation() || status.is_different_config_hash() {
         let _ = status.update(State::Processing, "reconciling new generation".to_string()).await;
