@@ -67,6 +67,11 @@ async fn apply(
         &builder::server::service::build(chirpstack.as_ref()),
     )
     .await?;
+    apply_resource(
+        &client,
+        &builder::server::service_account::build(chirpstack.as_ref()),
+    )
+    .await?;
     Ok(Action::requeue(Duration::from_secs(300)))
 }
 
