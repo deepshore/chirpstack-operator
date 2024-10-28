@@ -1,0 +1,263 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: chirpstacks.applications.deepshore.de
+spec:
+  group: applications.deepshore.de
+  names:
+    categories: []
+    kind: Chirpstack
+    plural: chirpstacks
+    shortNames: []
+    singular: chirpstack
+  scope: Namespaced
+  versions:
+    - additionalPrinterColumns: []
+      name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: Auto-generated derived type for Spec via `CustomResource`
+          properties:
+            spec:
+              properties:
+                restApi:
+                  properties:
+                    configuration:
+                      nullable: true
+                      properties:
+                        insecure:
+                          type: boolean
+                      required:
+                        - insecure
+                      type: object
+                    enabled:
+                      type: boolean
+                    service:
+                      nullable: true
+                      properties:
+                        nodePort:
+                          format: int32
+                          nullable: true
+                          type: integer
+                        port:
+                          format: int32
+                          type: integer
+                        type:
+                          default: ClusterIP
+                          enum:
+                            - ClusterIP
+                            - NodePort
+                          type: string
+                      required:
+                        - port
+                      type: object
+                    workload:
+                      nullable: true
+                      properties:
+                        image:
+                          properties:
+                            registry:
+                              default: docker.io
+                              type: string
+                            repository:
+                              default: chirpstack/chirpstack
+                              type: string
+                            tag:
+                              default: "4"
+                              type: string
+                          type: object
+                        replicas:
+                          format: int32
+                          type: integer
+                      required:
+                        - image
+                        - replicas
+                      type: object
+                  required:
+                    - enabled
+                  type: object
+                server:
+                  properties:
+                    configuration:
+                      properties:
+                        adrPluginFiles:
+                          nullable: true
+                          properties:
+                            configMapName:
+                              type: string
+                          required:
+                            - configMapName
+                          type: object
+                        certificates:
+                          default: []
+                          items:
+                            properties:
+                              name:
+                                type: string
+                              secretName:
+                                type: string
+                            required:
+                              - name
+                              - secretName
+                            type: object
+                          type: array
+                        configFiles:
+                          properties:
+                            configMapName:
+                              type: string
+                          required:
+                            - configMapName
+                          type: object
+                        envSecrets:
+                          default: []
+                          items:
+                            type: string
+                          type: array
+                        monitoring:
+                          nullable: true
+                          properties:
+                            port:
+                              type: string
+                            targetPort:
+                              type: string
+                          required:
+                            - port
+                            - targetPort
+                          type: object
+                      required:
+                        - configFiles
+                      type: object
+                    service:
+                      properties:
+                        nodePort:
+                          format: int32
+                          nullable: true
+                          type: integer
+                        port:
+                          format: int32
+                          type: integer
+                        type:
+                          default: ClusterIP
+                          enum:
+                            - ClusterIP
+                            - NodePort
+                          type: string
+                      required:
+                        - port
+                      type: object
+                    workload:
+                      properties:
+                        extraEnvVars:
+                          default: []
+                          items:
+                            properties:
+                              name:
+                                type: string
+                              value:
+                                type: string
+                            required:
+                              - name
+                              - value
+                            type: object
+                          type: array
+                        image:
+                          properties:
+                            registry:
+                              default: docker.io
+                              type: string
+                            repository:
+                              default: chirpstack/chirpstack
+                              type: string
+                            tag:
+                              default: "4"
+                              type: string
+                          type: object
+                        podAnnotations:
+                          default: []
+                          items:
+                            properties:
+                              key:
+                                type: string
+                              value:
+                                type: string
+                            required:
+                              - key
+                              - value
+                            type: object
+                          type: array
+                        podLabels:
+                          default: []
+                          items:
+                            properties:
+                              key:
+                                type: string
+                              value:
+                                type: string
+                            required:
+                              - key
+                              - value
+                            type: object
+                          type: array
+                        replicas:
+                          format: int32
+                          type: integer
+                        type:
+                          enum:
+                            - deployment
+                            - statefulset
+                          type: string
+                      required:
+                        - image
+                        - replicas
+                        - type
+                      type: object
+                  required:
+                    - configuration
+                    - service
+                    - workload
+                  type: object
+              required:
+                - restApi
+                - server
+              type: object
+            status:
+              nullable: true
+              properties:
+                lastObservedConfigHash:
+                  nullable: true
+                  type: string
+                lastObservedGeneration:
+                  format: int64
+                  nullable: true
+                  type: integer
+                lastObservedWorkloadType:
+                  enum:
+                    - deployment
+                    - statefulset
+                  nullable: true
+                  type: string
+                reconciling:
+                  properties:
+                    message:
+                      type: string
+                    status:
+                      enum:
+                        - Processing
+                        - Error
+                        - Done
+                      type: string
+                  required:
+                    - message
+                    - status
+                  type: object
+              required:
+                - reconciling
+              type: object
+          required:
+            - spec
+          title: Chirpstack
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}

@@ -1,0 +1,65 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: chirpstack-controller-manager
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+      - configmaps
+      - serviceaccounts
+      - pods
+      - pods/exec
+      - pods/log
+      - services
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+      - daemonsets
+      - replicasets
+      - statefulsets
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - applications.deepshore.de
+    resources:
+      - chirpstacks
+      - chirpstacks/status
+      - chirpstacks/finalizers
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: chirpstack-controller-manager
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: chirpstack-controller-manager
+subjects:
+- kind: ServiceAccount
+  name: chirpstack-controller
+  namespace: system
