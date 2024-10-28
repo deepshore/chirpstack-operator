@@ -1,11 +1,8 @@
-use tokio::sync::{Mutex, OwnedMutexGuard};
+use crate::{crd::Chirpstack, index::ObjectKey};
 use dashmap::DashMap;
-use crate::{
-    index::ObjectKey,
-    crd::Chirpstack
-};
-use std::sync::Arc;
 use kube::ResourceExt;
+use std::sync::Arc;
+use tokio::sync::{Mutex, OwnedMutexGuard};
 
 pub struct Locks {
     locks: DashMap<ObjectKey, Arc<Mutex<()>>>,
@@ -13,7 +10,9 @@ pub struct Locks {
 
 impl Locks {
     pub fn new() -> Locks {
-        Locks { locks: DashMap::new() }
+        Locks {
+            locks: DashMap::new(),
+        }
     }
 
     pub async fn lock(&self, resource: &Chirpstack) -> OwnedMutexGuard<()> {
@@ -21,14 +20,17 @@ impl Locks {
             .namespace()
             .unwrap_or("default".to_string())
             .clone();
-        let key = ObjectKey{
+        let key = ObjectKey {
             kind: "Chirpstack".to_string(),
             namespace,
             name: resource.name_any(),
         };
 
         let mutex = {
-            let entry = self.locks.entry(key).or_insert_with(|| Arc::new(Mutex::new(())));
+            let entry = self
+                .locks
+                .entry(key)
+                .or_insert_with(|| Arc::new(Mutex::new(())));
             Arc::clone(entry.value())
         };
         mutex.clone().lock_owned().await

@@ -1,28 +1,21 @@
-use crate::{
-    crd::Chirpstack,
-};
+use crate::crd::Chirpstack;
+use base64::{engine::general_purpose, Engine as _};
 use dashmap::DashMap;
+use futures::future::join_all;
+use k8s_openapi::api::core::v1::{ConfigMap, Secret};
+use k8s_openapi::Resource as KubeResource;
 use kube::{
     core::{NamespaceResourceScope, Resource},
     runtime::reflector::ObjectRef,
-    ResourceExt,
-    Client,
-    Api,
+    Api, Client, ResourceExt,
 };
-use futures::{future::join_all};
-use std::{collections::HashSet, fmt::Debug};
 use serde::{de::DeserializeOwned, Serialize};
-use k8s_openapi::api::core::v1::{ConfigMap, Secret};
 use sha2::{Digest, Sha256};
-use base64::{
-    engine::{general_purpose},
-    Engine as _,
-};
-use k8s_openapi::Resource as KubeResource;
+use std::{collections::HashSet, fmt::Debug};
 
 #[derive(Clone, Debug)]
 pub struct Index {
-    index: DashMap::<ObjectKey, HashSet<ObjectRef<Chirpstack>>>
+    index: DashMap<ObjectKey, HashSet<ObjectRef<Chirpstack>>>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -34,8 +27,8 @@ pub struct ObjectKey {
 
 impl Index {
     pub fn new() -> Index {
-        Index{
-            index: DashMap::new()
+        Index {
+            index: DashMap::new(),
         }
     }
 
@@ -48,20 +41,16 @@ impl Index {
             .clone();
 
         let mut keys = Vec::<ObjectKey>::with_capacity(config_map_names.len() + secret_names.len());
-        keys.extend(config_map_names.iter().map(
-            |name| ObjectKey{
-                kind: ConfigMap::KIND.to_string(),
-                namespace: namespace.clone(),
-                name: name.clone(),
-            }
-        ));
-        keys.extend(secret_names.iter().map(
-            |name| ObjectKey{
-                kind: Secret::KIND.to_string(),
-                namespace: namespace.clone(),
-                name: name.clone(),
-            }
-        ));
+        keys.extend(config_map_names.iter().map(|name| ObjectKey {
+            kind: ConfigMap::KIND.to_string(),
+            namespace: namespace.clone(),
+            name: name.clone(),
+        }));
+        keys.extend(secret_names.iter().map(|name| ObjectKey {
+            kind: Secret::KIND.to_string(),
+            namespace: namespace.clone(),
+            name: name.clone(),
+        }));
 
         let chirpstack_ref = ObjectRef::from_obj(chirpstack);
 
@@ -102,10 +91,10 @@ impl Index {
             .namespace()
             .unwrap_or("default".to_string())
             .clone();
-        let key = ObjectKey{
+        let key = ObjectKey {
             kind: T::KIND.to_string(),
             namespace,
-            name: resource.name_any()
+            name: resource.name_any(),
         };
         match self.index.get(&key) {
             Some(item) => item.value().into_iter().cloned().collect(),
@@ -116,7 +105,8 @@ impl Index {
 
 fn extract_config_map_names(chirpstack: &Chirpstack) -> Vec<String> {
     let mut names = Vec::<String>::new();
-    names.push(chirpstack
+    names.push(
+        chirpstack
             .spec
             .server
             .configuration
@@ -147,7 +137,7 @@ fn extract_secret_names(chirpstack: &Chirpstack) -> Vec<String> {
             .configuration
             .certificates
             .iter()
-            .map(|cert| cert.secret_name.clone())
+            .map(|cert| cert.secret_name.clone()),
     );
     names
 }
@@ -173,11 +163,10 @@ where
         let api: Api<T> = Api::namespaced(client.clone(), namespace);
         async move {
             let result = match api.get(&name).await {
-                Ok(resource) =>
-                    match serde_json::to_string(&resource) {
-                        Ok(json) => Ok(json),
-                        Err(e) => Err(format!("{e:?}")),
-                    },
+                Ok(resource) => match serde_json::to_string(&resource) {
+                    Ok(json) => Ok(json),
+                    Err(e) => Err(format!("{e:?}")),
+                },
                 Err(e) => Err(format!("{e:?}")),
             };
             match result {

@@ -137,9 +137,9 @@ pub mod spec {
 }
 
 pub mod status {
+    use super::types::WorkloadType;
     use schemars::JsonSchema;
     use serde::{Deserialize, Serialize};
-    use super::types::WorkloadType;
 
     #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
     #[serde(rename_all = "camelCase")]

@@ -1,7 +1,7 @@
 use crate::{
-    crd::{status::Field, status::State, status::Status, Chirpstack, types::WorkloadType},
-    index::determine_hash,
+    crd::{status::Field, status::State, status::Status, types::WorkloadType, Chirpstack},
     error::Error,
+    index::determine_hash,
 };
 use kube::{
     api::{Patch, PatchParams},
@@ -16,7 +16,11 @@ pub struct StatusHandler {
 
 impl StatusHandler {
     pub async fn new(client: Client, chirpstack: Chirpstack) -> StatusHandler {
-        StatusHandler { hash: determine_hash(&client, &chirpstack).await, client, chirpstack }
+        StatusHandler {
+            hash: determine_hash(&client, &chirpstack).await,
+            client,
+            chirpstack,
+        }
     }
 
     pub fn get_hash(&self) -> String {
@@ -24,7 +28,13 @@ impl StatusHandler {
     }
 
     pub fn get_last_observed_workload_type(&self) -> WorkloadType {
-        self.chirpstack.status.as_ref().unwrap().last_observed_workload_type.clone().unwrap()
+        self.chirpstack
+            .status
+            .as_ref()
+            .unwrap()
+            .last_observed_workload_type
+            .clone()
+            .unwrap()
     }
 
     pub fn is_different_generation(&self) -> bool {
@@ -48,11 +58,34 @@ impl StatusHandler {
                 .last_observed_workload_type
                 .is_some()
             && (self.chirpstack.spec.server.workload.workload_type
-                != self.chirpstack.status.as_ref().unwrap().last_observed_workload_type.clone().unwrap())
+                != self
+                    .chirpstack
+                    .status
+                    .as_ref()
+                    .unwrap()
+                    .last_observed_workload_type
+                    .clone()
+                    .unwrap())
     }
 
     pub fn is_different_config_hash(&self) -> bool {
-        !(self.chirpstack.status.is_some() && self.chirpstack.status.as_ref().unwrap().last_observed_config_hash.is_some() && (self.chirpstack.status.as_ref().unwrap().last_observed_config_hash.as_ref().unwrap() == &self.hash))
+        !(self.chirpstack.status.is_some()
+            && self
+                .chirpstack
+                .status
+                .as_ref()
+                .unwrap()
+                .last_observed_config_hash
+                .is_some()
+            && (self
+                .chirpstack
+                .status
+                .as_ref()
+                .unwrap()
+                .last_observed_config_hash
+                .as_ref()
+                .unwrap()
+                == &self.hash))
     }
 
     pub async fn update(&self, state: State, message: String) -> Result<(), Error> {
@@ -64,7 +97,9 @@ impl StatusHandler {
                         message,
                     },
                     last_observed_generation: self.chirpstack.metadata.generation,
-                    last_observed_workload_type: Some(self.chirpstack.spec.server.workload.workload_type.clone()),
+                    last_observed_workload_type: Some(
+                        self.chirpstack.spec.server.workload.workload_type.clone(),
+                    ),
                     last_observed_config_hash: Some(self.hash.clone()),
                 })
                 .await
