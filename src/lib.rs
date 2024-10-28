@@ -4,3 +4,4 @@ pub mod error;
 pub mod index;
 pub mod locks;
 pub mod status;
+pub mod k8s_helper;
