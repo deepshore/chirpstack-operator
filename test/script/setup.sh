@@ -10,7 +10,6 @@ kubectl apply -k test/dep &&
 REGISTRY_IP=$(kubectl -n kube-system get service registry -o jsonpath='{.spec.clusterIP}') &&
 cd config/manager && kustomize edit set image chirpstack-controller=${REGISTRY_IP}/chirpstack-controller && cd ../.. &&
 rm -fr bundle* &&
-operator-sdk generate kustomize manifests --package chirpstack-operator -q &&
 kustomize build config/manifests | operator-sdk generate bundle -q --overwrite --version 0.1.0 &&
 operator-sdk bundle validate ./bundle &&
 {

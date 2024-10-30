@@ -23,6 +23,9 @@ install: config/crd/bases/applications.deepshore.de_chirpstacks.yaml
 uninstall:
 	kubectl delete -k config/crd
 
+uninstall:
+	kubectl delete -k config/crd
+
 deploy-sample:
 	kubectl apply -k test/sample
 
