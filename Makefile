@@ -18,24 +18,16 @@ run-controller-local: install
 	RUST_LOG=debug cargo run --bin controller
 
 install: config/crd/bases/applications.deepshore.de_chirpstacks.yaml
-	kubectl apply -f config/crd/bases/applications.deepshore.de_chirpstacks.yaml
+	kubectl apply -k config/manifests
 
-deploy: install
-	kubectl apply -k config/manager
-	kubectl apply -k config/rbac
-
-undeploy:
-	kubectl delete -k config/manager
-	kubectl delete -k config/rbac
+uninstall:
+	kubectl delete -k config/manifests
 
 deploy-sample:
-	kubectl apply -k sample
+	kubectl apply -k test/sample
 
 undeploy-sample:
-	kubectl delete -k sample
-
-uninstall: undeploy
-	kubectl delete -f config/crd/bases/applications.deepshore.de_chirpstacks.yaml
+	kubectl delete -k test/sample
 
 bundle:
 	operator-sdk generate kustomize manifests --package chirpstack-operator -q

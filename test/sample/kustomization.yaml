@@ -1,3 +1,5 @@
+namespace: chirpstack
+
 resources:
 - chirpstack-env-secrets.yaml
 - chirpstack-certificates.yaml

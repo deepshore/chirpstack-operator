@@ -6,10 +6,7 @@ DOCKER_REGISTRY=localhost:5000
 
 { minikube status 2>/dev/null 1>/dev/null || minikube start --addons=registry; } &&
 { operator-sdk olm status 2>/dev/null 1>/dev/null || operator-sdk olm install --version v0.28.0; } &&
-kubectl apply -f test/chirpstack.yaml &&
-kubectl apply -f test/mosquitto.yaml &&
-kubectl apply -f test/postgresql.yaml &&
-kubectl apply -f test/redis.yaml &&
+kubectl apply -k test/dep &&
 REGISTRY_IP=$(kubectl -n kube-system get service registry -o jsonpath='{.spec.clusterIP}') &&
 cd config/manager && kustomize edit set image chirpstack-controller=${REGISTRY_IP}/chirpstack-controller && cd ../.. &&
 rm -fr bundle* &&
@@ -23,8 +20,7 @@ operator-sdk bundle validate ./bundle &&
   docker push ${DOCKER_REGISTRY}/${CONTROLLER_IMAGE} &&
   docker buildx build --tag ${DOCKER_REGISTRY}/${BUNDLE_IMAGE} -f bundle.Dockerfile . &&
   docker push ${DOCKER_REGISTRY}/${BUNDLE_IMAGE} &&
-  kubectl create namespace chirpstack &&
-  operator-sdk run bundle --use-http ${DOCKER_REGISTRY}/${BUNDLE_IMAGE} --namespace chirpstack
+  operator-sdk run bundle --use-http ${DOCKER_REGISTRY}/${BUNDLE_IMAGE} --namespace chirpstack --timeout 5m0s
 
   kill "$PID"
 }

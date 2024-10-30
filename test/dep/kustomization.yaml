@@ -1,0 +1,8 @@
+namespace: chirpstack
+
+resources:
+  - namespace.yaml
+  - chirpstack.yaml
+  - mosquitto.yaml
+  - postgresql.yaml
+  - redis.yaml
