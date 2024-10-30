@@ -1,0 +1,11 @@
+domain: deepshore.de
+projectName: chirpstack-operator
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: deepshore.de
+  group: applications
+  kind: Chirpstack
+  version: v1alpha1
+version: "3"

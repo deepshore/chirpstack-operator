@@ -13,8 +13,8 @@ RUN cargo build --release --bin controller
 
 FROM debian:bookworm-slim
 
-RUN useradd -m user
-USER user
+RUN useradd --create-home --uid 1001 user
+USER 1001
 
 WORKDIR /home/user
 COPY --from=builder /app/target/release/controller .

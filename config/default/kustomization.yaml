@@ -1,0 +1,8 @@
+namespace: chirpstack-operator-system
+
+namePrefix: chirpstack-operator-
+
+resources:
+  - ../crd
+  - ../rbac
+  - ../manager

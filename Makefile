@@ -1,9 +1,10 @@
-DOCKER_IMAGE := chirpstack-controller:latest
+CONTROLLER_IMAGE := chirpstack-controller:latest
+BUNDLE_IMAGE := chirpstack-operator-bundle:v0.1.0
 
 default: build manifest
 
 image:
-	docker buildx build --tag $(DOCKER_IMAGE) .
+	docker buildx build --tag $(CONTROLLER_IMAGE) -f Dockerfile . &&
 
 config/crd/bases/applications.deepshore.de_chirpstacks.yaml: src/crd.rs
 	cargo build
@@ -36,5 +37,13 @@ undeploy-sample:
 uninstall: undeploy
 	kubectl delete -f config/crd/bases/applications.deepshore.de_chirpstacks.yaml
 
+bundle:
+	operator-sdk generate kustomize manifests --package chirpstack-operator -q
+	kustomize build config/manifests | operator-sdk generate bundle -q --overwrite --version 0.1.0
+	operator-sdk bundle validate ./bundle
+
+bundle-image: bundle
+	docker buildx build --tag $(BUNDLE_IMAGE) -f bundle.Dockerfile . &&
+
 clean:
-	make undeploy-sample; make undeploy; make uninstall
+	rm -fr bundle*

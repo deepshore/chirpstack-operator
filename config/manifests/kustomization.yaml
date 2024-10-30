@@ -1,0 +1,3 @@
+resources:
+  - bases/chirpstack-operator.clusterserviceversion.yaml
+  - ../default
