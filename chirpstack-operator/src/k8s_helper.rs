@@ -1,4 +1,5 @@
-use crate::{builder::meta_data::MetaData, crd::Chirpstack, error::Error};
+use crate::{builder::meta_data::MetaData, crd::Chirpstack};
+use droperator::error::Error;
 use kube::{
     api::{DeleteParams, ListParams, Patch, PatchParams, PostParams},
     core::{NamespaceResourceScope, Resource},

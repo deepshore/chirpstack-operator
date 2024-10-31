@@ -1,11 +1,13 @@
-use co_rust::{
+use chirpstack_operator::{
     builder,
     crd::{status::State, types::WorkloadType, Chirpstack},
+    k8s_helper::{apply_resource, find_and_delete},
+    status::StatusHandler,
+};
+use droperator::{
     error::{Error, ReconcilerError},
     config_index::ConfigIndex,
-    k8s_helper::{apply_resource, find_and_delete},
     resource_lock::ResourceLock,
-    status::StatusHandler,
 };
 use env_logger;
 use futures::StreamExt;

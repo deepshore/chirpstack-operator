@@ -37,5 +37,14 @@ bundle:
 bundle-image: bundle
 	docker buildx build --tag $(BUNDLE_IMAGE) -f bundle.Dockerfile . &&
 
+minikube:
+	minikube status 2>/dev/null 1>/dev/null || minikube start --addons=registry
+	kubectl apply -k test/dep
+	kubectl apply -k config/manifests
+
+test-cluster:
+	sh test/script/setup.sh
+
 clean:
 	rm -fr bundle*
+	minikube delete

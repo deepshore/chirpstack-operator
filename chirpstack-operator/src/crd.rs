@@ -1,4 +1,4 @@
-use crate::config_index::Config;
+use droperator::config_index::Config;
 pub use spec::Chirpstack;
 
 pub mod spec {

@@ -1,4 +1,4 @@
-use co_rust::crd::Chirpstack;
+use chirpstack_operator::crd::Chirpstack;
 use kube::CustomResourceExt;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {

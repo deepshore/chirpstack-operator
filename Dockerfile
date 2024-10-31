@@ -6,10 +6,10 @@ ENV PATH=$CARGO_HOME/bin:$PATH
 
 WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
+COPY chirpstack-operator ./chirpstack-operator
+COPY droperator ./droperator
 RUN cargo fetch
-COPY src ./src
-RUN cargo build --release --bin controller
-
+RUN cargo build --release --bin controller --package chirpstack-operator
 
 FROM debian:bookworm-slim
 
