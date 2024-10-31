@@ -8,6 +8,9 @@ pub enum Error {
     #[error("Serialization error: {0}")]
     SerializationError(#[from] serde_json::Error),
 
+    #[error("Missing field: {0}")]
+    MissingField(String),
+
     #[error("Other error: {0}")]
     Other(String),
 }

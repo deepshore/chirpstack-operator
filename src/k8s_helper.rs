@@ -1,15 +1,11 @@
-use crate::{
-    builder::meta_data::MetaData,
-    crd::{Chirpstack},
-    error::{Error},
-};
+use crate::{builder::meta_data::MetaData, crd::Chirpstack, error::Error};
 use kube::{
     api::{DeleteParams, ListParams, Patch, PatchParams, PostParams},
     core::{NamespaceResourceScope, Resource},
     Api, Client, ResourceExt,
 };
 use serde::{de::DeserializeOwned, Serialize};
-use std::{fmt::Debug};
+use std::fmt::Debug;
 
 const CONTROLLER_NAME: &str = "chirpstack-controller";
 

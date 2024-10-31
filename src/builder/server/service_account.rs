@@ -6,7 +6,9 @@ use crate::crd::spec::Chirpstack;
 
 pub fn build(chirpstack: &Chirpstack) -> ServiceAccount {
     let crd_name = chirpstack.name_any();
-    let namespace = chirpstack.namespace().unwrap_or_else(|| "default".to_string());
+    let namespace = chirpstack
+        .namespace()
+        .unwrap_or_else(|| "default".to_string());
 
     let sa_name = format!("chirpstack-{}", crd_name);
 

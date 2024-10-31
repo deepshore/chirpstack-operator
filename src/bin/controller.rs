@@ -3,9 +3,9 @@ use co_rust::{
     crd::{status::State, types::WorkloadType, Chirpstack},
     error::{Error, ReconcilerError},
     index::Index,
-    locks::Locks,
-    status::StatusHandler,
     k8s_helper::{apply_resource, find_and_delete},
+    resource_lock::ResourceLock,
+    status::StatusHandler,
 };
 use env_logger;
 use futures::StreamExt;
@@ -90,7 +90,11 @@ async fn reconcile(
         "locking reconciliation for {:?}",
         chirpstack_trigger.name_any()
     );
-    let _lock = context.locks.lock(chirpstack_trigger.as_ref());
+    let _lock = context
+        .crd_lock
+        .lock(chirpstack_trigger.as_ref())
+        .await
+        .map_err(ReconcilerError::from);
     log::info!("reconciling Chirpstack {:?}", chirpstack_trigger.name_any());
     let api: Api<Chirpstack> = Api::namespaced(
         context.client.clone(),
@@ -153,7 +157,7 @@ fn error_policy(_obj: Arc<Chirpstack>, _error: &ReconcilerError, _ctx: Arc<Conte
 struct Context {
     client: Client,
     index: Index,
-    locks: Locks,
+    crd_lock: ResourceLock,
 }
 
 #[tokio::main]
@@ -169,7 +173,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let context = Arc::new(Context {
         client: client,
         index: Index::new(),
-        locks: Locks::new(),
+        crd_lock: ResourceLock::new(),
     });
 
     Controller::new(chirpstack_api, watcher::Config::default())
