@@ -11,9 +11,17 @@ pub struct MetaData {
     pub object_meta: ObjectMeta,
 }
 
-impl From<&Chirpstack> for MetaData {
-    fn from(chirpstack: &Chirpstack) -> Self {
-        let app_name = format!("chirpstack-{}", chirpstack.name_any());
+impl MetaData {
+    pub fn new_rest_api(chirpstack: &Chirpstack) -> Self {
+        MetaData::new(chirpstack, "chirpstack-rest-api".to_string())
+    }
+
+    pub fn new_server(chirpstack: &Chirpstack) -> Self {
+        MetaData::new(chirpstack, "chirpstack".to_string())
+    }
+
+    pub fn new(chirpstack: &Chirpstack, app_name_prefix: String) -> Self {
+        let app_name = format!("{}-{}", app_name_prefix, chirpstack.name_any());
 
         let mut labels = BTreeMap::new();
         labels.insert("app".to_string(), app_name.clone());
@@ -48,5 +56,11 @@ impl From<&Chirpstack> for MetaData {
             label_selector,
             object_meta,
         }
+    }
+}
+
+impl From<&Chirpstack> for MetaData {
+    fn from(chirpstack: &Chirpstack) -> Self {
+        MetaData::new_server(chirpstack)
     }
 }

@@ -74,6 +74,19 @@ async fn apply(
         &builder::server::service_account::build(chirpstack.as_ref()),
     )
     .await?;
+
+    if chirpstack.spec.rest_api.enabled {
+        apply_resource(
+            &client,
+            &builder::rest_api::deployment::build(chirpstack.as_ref()),
+        )
+        .await?;
+        apply_resource(
+            &client,
+            &builder::rest_api::service::build(chirpstack.as_ref()),
+        )
+        .await?;
+    }
     Ok(Action::requeue(Duration::from_secs(300)))
 }
 

@@ -43,5 +43,3 @@ spec:
         configMapName: chirpstack-adr-plugin-files
   restApi:
     enabled: true
-    service:
-      port: 8090

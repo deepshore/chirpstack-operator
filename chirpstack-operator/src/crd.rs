@@ -43,6 +43,7 @@ pub mod spec {
             pub struct Workload {
                 #[serde(rename = "type")]
                 pub workload_type: WorkloadType,
+                #[serde(default = "default_image")]
                 pub image: Image,
                 pub replicas: i32,
                 #[serde(default)]
@@ -51,6 +52,14 @@ pub mod spec {
                 pub pod_labels: Vec<KeyValue>,
                 #[serde(default)]
                 pub extra_env_vars: Vec<EnvVar>,
+            }
+
+            fn default_image() -> Image {
+                Image{
+                    registry: "docker.io".to_string(),
+                    repository: "chirpstack/chirpstack".to_string(),
+                    tag: "4".to_string()
+                }
             }
         }
 
@@ -65,10 +74,15 @@ pub mod spec {
                 #[serde(rename = "type")]
                 #[serde(default)]
                 pub service_type: ServiceType,
+                #[serde(default = "default_port")]
                 pub port: i32,
 
                 #[serde(skip_serializing_if = "Option::is_none")]
                 pub node_port: Option<i32>,
+            }
+
+            fn default_port() -> i32 {
+                8080
             }
         }
 
@@ -101,14 +115,14 @@ pub mod spec {
         pub struct RestApi {
             pub enabled: bool,
 
-            #[serde(skip_serializing_if = "Option::is_none")]
-            pub workload: Option<workload::Workload>,
+            #[serde(default)]
+            pub workload: workload::Workload,
 
-            #[serde(skip_serializing_if = "Option::is_none")]
-            pub service: Option<Service>,
+            #[serde(default)]
+            pub service: Service,
 
-            #[serde(skip_serializing_if = "Option::is_none")]
-            pub configuration: Option<configuration::Configuration>,
+            #[serde(default)]
+            pub configuration: configuration::Configuration,
         }
 
         pub mod workload {
@@ -116,11 +130,24 @@ pub mod spec {
             use schemars::JsonSchema;
             use serde::{Deserialize, Serialize};
 
-            #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
+            #[derive(Debug, Serialize, Deserialize, Clone, JsonSchema)]
             #[serde(rename_all = "camelCase")]
             pub struct Workload {
                 pub image: Image,
                 pub replicas: i32,
+            }
+
+            impl Default for Workload {
+                fn default() -> Workload {
+                    Workload{
+                        image: Image{
+                            registry: "docker.io".to_string(),
+                            repository: "chirpstack/chirpstack-rest-api".to_string(),
+                            tag: "4".to_string()
+                        },
+                        replicas: 1,
+                    }
+                }
             }
         }
 
@@ -131,7 +158,12 @@ pub mod spec {
             #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
             #[serde(rename_all = "camelCase")]
             pub struct Configuration {
+                #[serde(default = "default_insecure")]
                 pub insecure: bool,
+            }
+
+            fn default_insecure() -> bool {
+                true
             }
         }
     }
@@ -183,26 +215,9 @@ pub mod types {
     #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
     #[serde(rename_all = "camelCase")]
     pub struct Image {
-        #[serde(default = "default_registry")]
         pub registry: String,
-
-        #[serde(default = "default_repository")]
         pub repository: String,
-
-        #[serde(default = "default_tag")]
         pub tag: String,
-    }
-
-    fn default_registry() -> String {
-        "docker.io".to_string()
-    }
-
-    fn default_repository() -> String {
-        "chirpstack/chirpstack".to_string()
-    }
-
-    fn default_tag() -> String {
-        "4".to_string()
     }
 
     #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
