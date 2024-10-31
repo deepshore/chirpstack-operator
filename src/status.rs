@@ -1,7 +1,7 @@
 use crate::{
     crd::{status::Field, status::State, status::Status, types::WorkloadType, Chirpstack},
     error::Error,
-    index::determine_hash,
+    config_index::determine_hash,
 };
 use kube::{
     api::{Patch, PatchParams},
@@ -17,7 +17,7 @@ pub struct StatusHandler {
 impl StatusHandler {
     pub async fn new(client: Client, chirpstack: Chirpstack) -> StatusHandler {
         StatusHandler {
-            hash: determine_hash(&client, &chirpstack).await,
+            hash: determine_hash(&chirpstack, &client).await,
             client,
             chirpstack,
         }

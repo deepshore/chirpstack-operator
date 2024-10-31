@@ -2,7 +2,7 @@ use co_rust::{
     builder,
     crd::{status::State, types::WorkloadType, Chirpstack},
     error::{Error, ReconcilerError},
-    index::Index,
+    config_index::ConfigIndex,
     k8s_helper::{apply_resource, find_and_delete},
     resource_lock::ResourceLock,
     status::StatusHandler,
@@ -156,7 +156,7 @@ fn error_policy(_obj: Arc<Chirpstack>, _error: &ReconcilerError, _ctx: Arc<Conte
 
 struct Context {
     client: Client,
-    index: Index,
+    index: ConfigIndex<Chirpstack>,
     crd_lock: ResourceLock,
 }
 
@@ -172,7 +172,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let context = Arc::new(Context {
         client: client,
-        index: Index::new(),
+        index: ConfigIndex::new(),
         crd_lock: ResourceLock::new(),
     });
 

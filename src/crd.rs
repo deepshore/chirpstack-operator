@@ -1,3 +1,4 @@
+use crate::config_index::Config;
 pub use spec::Chirpstack;
 
 pub mod spec {
@@ -232,29 +233,70 @@ pub mod types {
         }
     }
 
-    #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
+    #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema, PartialEq, Eq, Hash)]
     #[serde(rename_all = "camelCase")]
     pub struct ConfigFiles {
         pub config_map_name: String,
     }
 
-    #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
+    #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema, PartialEq, Eq, Hash)]
     #[serde(rename_all = "camelCase")]
     pub struct ConfigMapName {
         pub config_map_name: String,
     }
 
-    #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
+    #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema, PartialEq, Eq, Hash)]
     #[serde(rename_all = "camelCase")]
     pub struct Certificate {
         pub name: String,
         pub secret_name: String,
     }
 
-    #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
+    #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema, PartialEq, Eq, Hash)]
     #[serde(rename_all = "camelCase")]
     pub struct Monitoring {
         pub port: String,
         pub target_port: String,
+    }
+}
+
+impl Config for Chirpstack {
+    fn get_config_map_names(&self) -> Vec<String> {
+        let mut names = Vec::<String>::new();
+        names.push(
+            self
+                .spec
+                .server
+                .configuration
+                .config_files
+                .config_map_name
+                .clone(),
+        );
+        match &self.spec.server.configuration.adr_plugin_files {
+            Some(adr_plugin_files) => names.push(adr_plugin_files.config_map_name.clone()),
+            None => (),
+        }
+        names
+    }
+
+    fn get_secret_names(&self) -> Vec<String> {
+        let mut names: Vec<String> = self
+            .spec
+            .server
+            .configuration
+            .env_secrets
+            .iter()
+            .map(|name| name.clone())
+            .collect();
+        names.extend(
+            self
+                .spec
+                .server
+                .configuration
+                .certificates
+                .iter()
+                .map(|cert| cert.secret_name.clone()),
+        );
+        names
     }
 }
