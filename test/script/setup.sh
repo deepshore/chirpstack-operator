@@ -20,6 +20,10 @@ operator-sdk bundle validate ./bundle &&
   docker push ${DOCKER_REGISTRY}/${CONTROLLER_IMAGE} &&
   docker buildx build --tag ${DOCKER_REGISTRY}/${BUNDLE_IMAGE} -f bundle.Dockerfile . &&
   docker push ${DOCKER_REGISTRY}/${BUNDLE_IMAGE} &&
+  {
+    operator-sdk cleanup chirpstack-operator --namespace chirpstack --delete-all ||
+    true
+  } &&
   operator-sdk run bundle --use-http ${DOCKER_REGISTRY}/${BUNDLE_IMAGE} --namespace chirpstack --timeout 5m0s
 
   kill "$PID"

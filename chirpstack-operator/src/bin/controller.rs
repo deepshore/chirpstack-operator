@@ -1,8 +1,8 @@
 use chirpstack_operator::{
     builder,
-    crd::{status::State, types::WorkloadType, Chirpstack},
+    crd::{types::WorkloadType, Chirpstack},
     k8s_helper::{apply_resource, find_and_delete},
-    status::StatusHandler,
+    status::{StatusHandler, StatusHandlerStatus},
 };
 use droperator::{
     error::{Error, ReconcilerError},
@@ -122,7 +122,7 @@ async fn reconcile(
     let chirpstack = match api.get(&chirpstack_trigger.name_any()).await {
         Ok(o) => Ok(Arc::new(o)),
         Err(e) => {
-            log::warn!("****** REFETCH {e:?}");
+            log::warn!("Could not refetch resource {chirpstack_trigger:?}: {e:?}");
             Err(Error::from(e))
         }
     }?;
@@ -132,41 +132,46 @@ async fn reconcile(
         Arc::unwrap_or_clone(chirpstack.clone()),
     )
     .await;
-    if status.is_different_generation() || status.is_different_config_hash() {
-        let _ = status
-            .update(State::Processing, "reconciling new generation".to_string())
-            .await;
-        finalizer(
-            &api,
-            "chirpstack-finalizer",
-            chirpstack.clone(),
-            |event| async {
-                let result = match event {
-                    Event::Apply(chirpstack) => apply(context.clone(), chirpstack, &status).await,
-                    Event::Cleanup(chirpstack) => cleanup(context.clone(), chirpstack).await,
-                };
-                match result {
-                    Ok(_) => {
-                        let _ = status.update(State::Done, "reconciled".to_string()).await;
-                        Ok(Action::requeue(Duration::from_secs(300)))
+    match status.status() {
+        StatusHandlerStatus::NeedsReconciliation => {
+            let _ = status.start_reconciliation();
+            finalizer(
+                &api,
+                "chirpstack-finalizer",
+                chirpstack.clone(),
+                |event| async {
+                    let result = match event {
+                        Event::Apply(chirpstack) => apply(context.clone(), chirpstack, &status).await,
+                        Event::Cleanup(chirpstack) => cleanup(context.clone(), chirpstack).await,
+                    };
+                    match result {
+                        Ok(action) => {
+                            let _ = status.done_without_errors().await;
+                            Ok(action)
+                        }
+                        Err(e) => {
+                            let _ = status.done_with_errors(vec![format!("{e:?}")]).await;
+                            Err(e)
+                        }
                     }
-                    Err(e) => {
-                        let _ = status.update(State::Error, format!("{e:?}")).await;
-                        Err(e)
-                    }
-                }
-            },
-        )
-        .await
-        .map_err(ReconcilerError::from)
-    } else {
-        log::info!("no action needed, requeueing...");
-        Ok(Action::requeue(Duration::from_secs(300)))
+                },
+            )
+            .await
+            .map_err(ReconcilerError::from)
+        },
+        StatusHandlerStatus::HasError => {
+            log::info!("is in error state but not yet ready for the next attempt, requeueing...");
+            Ok(Action::requeue(status.error_timeout.clone()))
+        },
+        StatusHandlerStatus::Clean => {
+            log::info!("no action needed, requeueing...");
+            Ok(Action::requeue(Duration::from_secs(300)))
+        }
     }
 }
 
 fn error_policy(_obj: Arc<Chirpstack>, _error: &ReconcilerError, _ctx: Arc<Context>) -> Action {
-    Action::requeue(Duration::from_secs(60))
+    Action::requeue(Duration::from_secs(5))
 }
 
 struct Context {

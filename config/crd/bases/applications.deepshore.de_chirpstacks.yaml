@@ -23,23 +23,26 @@ spec:
                 restApi:
                   properties:
                     configuration:
-                      nullable: true
+                      default:
+                        insecure: false
                       properties:
                         insecure:
+                          default: true
                           type: boolean
-                      required:
-                        - insecure
                       type: object
                     enabled:
                       type: boolean
                     service:
-                      nullable: true
+                      default:
+                        port: 0
+                        type: ClusterIP
                       properties:
                         nodePort:
                           format: int32
                           nullable: true
                           type: integer
                         port:
+                          default: 8080
                           format: int32
                           type: integer
                         type:
@@ -48,30 +51,36 @@ spec:
                             - ClusterIP
                             - NodePort
                           type: string
-                      required:
-                        - port
                       type: object
                     workload:
-                      nullable: true
+                      default:
+                        image:
+                          registry: ""
+                          repository: ""
+                          tag: ""
+                        replicas: 0
                       properties:
                         image:
+                          default:
+                            registry: docker.io
+                            repository: chirpstack/chirpstack-rest-api
+                            tag: "4"
                           properties:
                             registry:
-                              default: docker.io
                               type: string
                             repository:
-                              default: chirpstack/chirpstack
                               type: string
                             tag:
-                              default: "4"
                               type: string
+                          required:
+                            - registry
+                            - repository
+                            - tag
                           type: object
                         replicas:
+                          default: 1
                           format: int32
                           type: integer
-                      required:
-                        - image
-                        - replicas
                       type: object
                   required:
                     - enabled
@@ -134,6 +143,7 @@ spec:
                           nullable: true
                           type: integer
                         port:
+                          default: 8080
                           format: int32
                           type: integer
                         type:
@@ -142,8 +152,6 @@ spec:
                             - ClusterIP
                             - NodePort
                           type: string
-                      required:
-                        - port
                       type: object
                     workload:
                       properties:
@@ -161,16 +169,21 @@ spec:
                             type: object
                           type: array
                         image:
+                          default:
+                            registry: docker.io
+                            repository: chirpstack/chirpstack
+                            tag: "4"
                           properties:
                             registry:
-                              default: docker.io
                               type: string
                             repository:
-                              default: chirpstack/chirpstack
                               type: string
                             tag:
-                              default: "4"
                               type: string
+                          required:
+                            - registry
+                            - repository
+                            - tag
                           type: object
                         podAnnotations:
                           default: []
@@ -207,7 +220,6 @@ spec:
                             - statefulset
                           type: string
                       required:
-                        - image
                         - replicas
                         - type
                       type: object
@@ -223,35 +235,53 @@ spec:
             status:
               nullable: true
               properties:
-                lastObservedConfigHash:
-                  nullable: true
-                  type: string
-                lastObservedGeneration:
-                  format: int64
-                  nullable: true
-                  type: integer
-                lastObservedWorkloadType:
-                  enum:
-                    - deployment
-                    - statefulset
-                  nullable: true
-                  type: string
-                reconciling:
+                bookkeeping:
                   properties:
-                    message:
+                    lastObservedConfigHash:
+                      nullable: true
                       type: string
-                    status:
+                    lastObservedGeneration:
+                      format: int64
+                      nullable: true
+                      type: integer
+                    lastObservedWorkloadType:
                       enum:
-                        - Processing
-                        - Error
-                        - Done
+                        - deployment
+                        - statefulset
+                      nullable: true
                       type: string
-                  required:
-                    - message
-                    - status
+                    lastReconciliationAttempt:
+                      default:
+                        nanos_since_epoch: 0
+                        secs_since_epoch: 0
+                      properties:
+                        nanos_since_epoch:
+                          format: uint32
+                          minimum: 0.0
+                          type: integer
+                        secs_since_epoch:
+                          format: uint64
+                          minimum: 0.0
+                          type: integer
+                      required:
+                        - nanos_since_epoch
+                        - secs_since_epoch
+                      type: object
                   type: object
+                errors:
+                  items:
+                    type: string
+                  type: array
+                state:
+                  enum:
+                    - Processing
+                    - Error
+                    - Done
+                  type: string
               required:
-                - reconciling
+                - bookkeeping
+                - errors
+                - state
               type: object
           required:
             - spec

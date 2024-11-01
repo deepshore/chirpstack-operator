@@ -6,22 +6,22 @@ default: build manifest
 image:
 	docker buildx build --tag $(CONTROLLER_IMAGE) -f Dockerfile . &&
 
-config/crd/bases/applications.deepshore.de_chirpstacks.yaml: src/crd.rs
+config/crd/bases/applications.deepshore.de_chirpstacks.yaml: chirpstack-operator/src/crd.rs
 	cargo build
 	cargo run --bin make-crd-manifest | yq -o yaml -P > $@ || rm -f $@
 
 build:
 	cargo build
 
-run-controller-local: install
+run-controller:
 	cargo build
 	RUST_LOG=debug cargo run --bin controller
 
 install: config/crd/bases/applications.deepshore.de_chirpstacks.yaml
-	kubectl apply -k config/manifests
+	kubectl apply -k config/crd
 
 uninstall:
-	kubectl delete -k config/manifests
+	kubectl delete -k config/crd
 
 deploy-sample:
 	kubectl apply -k test/sample
@@ -37,10 +37,10 @@ bundle:
 bundle-image: bundle
 	docker buildx build --tag $(BUNDLE_IMAGE) -f bundle.Dockerfile . &&
 
-minikube:
+minikube: config/crd/bases/applications.deepshore.de_chirpstacks.yaml
 	minikube status 2>/dev/null 1>/dev/null || minikube start --addons=registry
 	kubectl apply -k test/dep
-	kubectl apply -k config/manifests
+	kubectl apply -k config/crd
 
 test-cluster:
 	sh test/script/setup.sh

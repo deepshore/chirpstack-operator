@@ -1,19 +1,26 @@
-use crate::{
-    crd::{status::Field, status::State, status::Status, types::WorkloadType, Chirpstack},
+use crate::crd::{
+    status::Bookkeeping, status::State, status::Status, types::WorkloadType, Chirpstack,
 };
-use droperator::{
-    error::Error,
-    config_index::determine_hash,
-};
+use droperator::{config_index::determine_hash, error::Error};
 use kube::{
     api::{Patch, PatchParams},
     Api, Client, ResourceExt,
 };
+use std::time::{Duration, SystemTime};
 
 pub struct StatusHandler {
+    pub error_timeout: Duration,
+
     client: Client,
     chirpstack: Chirpstack,
     hash: String,
+    this_reconciliation_attempt: SystemTime,
+}
+
+pub enum StatusHandlerStatus {
+    NeedsReconciliation,
+    HasError,
+    Clean,
 }
 
 impl StatusHandler {
@@ -22,6 +29,8 @@ impl StatusHandler {
             hash: determine_hash(&chirpstack, &client).await,
             client,
             chirpstack,
+            error_timeout: Duration::from_secs(30),
+            this_reconciliation_attempt: SystemTime::now(),
         }
     }
 
@@ -34,6 +43,7 @@ impl StatusHandler {
             .status
             .as_ref()
             .unwrap()
+            .bookkeeping
             .last_observed_workload_type
             .clone()
             .unwrap()
@@ -46,6 +56,7 @@ impl StatusHandler {
                 .status
                 .as_ref()
                 .unwrap()
+                .bookkeeping
                 .last_observed_generation
                 == self.chirpstack.metadata.generation))
     }
@@ -57,6 +68,7 @@ impl StatusHandler {
                 .status
                 .as_ref()
                 .unwrap()
+                .bookkeeping
                 .last_observed_workload_type
                 .is_some()
             && (self.chirpstack.spec.server.workload.workload_type
@@ -65,6 +77,7 @@ impl StatusHandler {
                     .status
                     .as_ref()
                     .unwrap()
+                    .bookkeeping
                     .last_observed_workload_type
                     .clone()
                     .unwrap())
@@ -77,6 +90,7 @@ impl StatusHandler {
                 .status
                 .as_ref()
                 .unwrap()
+                .bookkeeping
                 .last_observed_config_hash
                 .is_some()
             && (self
@@ -84,53 +98,97 @@ impl StatusHandler {
                 .status
                 .as_ref()
                 .unwrap()
+                .bookkeeping
                 .last_observed_config_hash
                 .as_ref()
                 .unwrap()
                 == &self.hash))
     }
 
-    pub async fn update(&self, state: State, message: String) -> Result<(), Error> {
-        match state {
-            State::Done => {
-                self.update_remote(Status {
-                    reconciling: Field {
-                        status: State::Done,
-                        message,
-                    },
-                    last_observed_generation: self.chirpstack.metadata.generation,
-                    last_observed_workload_type: Some(
-                        self.chirpstack.spec.server.workload.workload_type.clone(),
-                    ),
-                    last_observed_config_hash: Some(self.hash.clone()),
-                })
-                .await
+    pub fn is_time_to_retry(&self) -> bool {
+        let elapsed = self
+            .chirpstack
+            .status
+            .as_ref()
+            .unwrap()
+            .bookkeeping
+            .last_reconciliation_attempt
+            .elapsed();
+        self.chirpstack.status.is_none()
+            || (elapsed.is_ok() && (elapsed.unwrap() >= self.error_timeout))
+    }
+
+    pub fn needs_reconciliation(&self) -> bool {
+        self.chirpstack.status.is_none()
+            || match self.chirpstack.status.as_ref().unwrap().state {
+                State::Done => self.is_different_generation() || self.is_different_config_hash(),
+                _ => self.is_time_to_retry(),
             }
-            other => {
-                self.update_remote(Status {
-                    reconciling: Field {
-                        status: other,
-                        message,
-                    },
-                    last_observed_generation: self
-                        .chirpstack
-                        .status
-                        .as_ref()
-                        .and_then(|status| status.last_observed_generation),
-                    last_observed_workload_type: self
-                        .chirpstack
-                        .status
-                        .as_ref()
-                        .and_then(|status| status.last_observed_workload_type.clone()),
-                    last_observed_config_hash: self
-                        .chirpstack
-                        .status
-                        .as_ref()
-                        .and_then(|status| status.last_observed_config_hash.clone()),
-                })
-                .await
+    }
+
+    pub fn status(&self) -> StatusHandlerStatus {
+        if self.needs_reconciliation() {
+            StatusHandlerStatus::NeedsReconciliation
+        } else {
+            match self.chirpstack.status.as_ref().unwrap().state {
+                State::Done => StatusHandlerStatus::Clean,
+                _ => StatusHandlerStatus::HasError,
             }
         }
+    }
+
+    pub async fn start_reconciliation(&self) -> Result<(), Error> {
+        if self
+            .chirpstack
+            .status
+            .as_ref()
+            .and_then(|status| Some(status.state == State::Processing))
+            .or(Some(false))
+            .unwrap()
+        {
+            log::warn!("State is Processing at start of reconciliation. Either the controller was killed in process or there is a bug!");
+        }
+        self.update_remote(Status {
+            state: State::Processing,
+            errors: vec![],
+            bookkeeping: Bookkeeping {
+                last_reconciliation_attempt: self.this_reconciliation_attempt,
+                last_observed_generation: self.chirpstack.metadata.generation,
+                last_observed_config_hash: Some(self.hash.clone()),
+                last_observed_workload_type: self.chirpstack.status.as_ref().and_then(|status| status.bookkeeping.last_observed_workload_type.clone()),
+            },
+        })
+        .await
+    }
+
+    pub async fn done_without_errors(&self) -> Result<(), Error> {
+        self.update_remote(Status {
+            state: State::Done,
+            errors: vec![],
+            bookkeeping: Bookkeeping {
+                last_reconciliation_attempt: self.this_reconciliation_attempt,
+                last_observed_generation: self.chirpstack.metadata.generation,
+                last_observed_config_hash: Some(self.hash.clone()),
+                last_observed_workload_type: Some(
+                    self.chirpstack.spec.server.workload.workload_type.clone(),
+                ),
+            },
+        })
+        .await
+    }
+
+    pub async fn done_with_errors(&self, errors: Vec<String>) -> Result<(), Error> {
+        self.update_remote(Status {
+            state: State::Error,
+            errors,
+            bookkeeping: Bookkeeping {
+                last_reconciliation_attempt: self.this_reconciliation_attempt,
+                last_observed_generation: self.chirpstack.metadata.generation,
+                last_observed_config_hash: Some(self.hash.clone()),
+                last_observed_workload_type: self.chirpstack.status.as_ref().and_then(|status| status.bookkeeping.last_observed_workload_type.clone()),
+            },
+        })
+        .await
     }
 
     async fn update_remote(&self, status: Status) -> Result<(), Error> {

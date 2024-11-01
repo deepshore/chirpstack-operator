@@ -173,17 +173,42 @@ pub mod status {
     use super::types::WorkloadType;
     use schemars::JsonSchema;
     use serde::{Deserialize, Serialize};
+    use std::time::SystemTime;
 
     #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
     #[serde(rename_all = "camelCase")]
     pub struct Status {
-        pub reconciling: Field,
+        pub state: State,
+        pub errors: Vec<String>,
+        pub bookkeeping: Bookkeeping,
+    }
+
+    #[derive(Debug, Serialize, Deserialize, Clone, JsonSchema)]
+    #[serde(rename_all = "camelCase")]
+    pub struct Bookkeeping {
+        #[serde(default = "default_last_reconciliation_attempt")]
+        pub last_reconciliation_attempt: SystemTime,
         pub last_observed_generation: Option<i64>,
         pub last_observed_workload_type: Option<WorkloadType>,
         pub last_observed_config_hash: Option<String>,
     }
 
-    #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
+    impl Default for Bookkeeping {
+        fn default() -> Self {
+            Bookkeeping{
+                last_reconciliation_attempt: SystemTime::UNIX_EPOCH.clone(),
+                last_observed_generation: None,
+                last_observed_workload_type: None,
+                last_observed_config_hash: None,
+            }
+        }
+    }
+
+    fn default_last_reconciliation_attempt() -> SystemTime {
+        SystemTime::UNIX_EPOCH.clone()
+    }
+
+    #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema, PartialEq, Eq)]
     pub enum State {
         #[default]
         Processing,
