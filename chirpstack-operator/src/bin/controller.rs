@@ -1,7 +1,7 @@
 use chirpstack_operator::{
     builder,
     crd::{types::WorkloadType, Chirpstack},
-    k8s_helper::{apply_resource, find_and_delete},
+    k8s_helper::{apply_resource, delete_resource, find_and_delete},
     status::{StatusHandler, StatusHandlerStatus},
 };
 use droperator::{
@@ -82,6 +82,17 @@ async fn apply(
         )
         .await?;
         apply_resource(
+            &client,
+            &builder::rest_api::service::build(chirpstack.as_ref()),
+        )
+        .await?;
+    } else {
+        delete_resource(
+            &client,
+            &builder::rest_api::deployment::build(chirpstack.as_ref()),
+        )
+        .await?;
+        delete_resource(
             &client,
             &builder::rest_api::service::build(chirpstack.as_ref()),
         )

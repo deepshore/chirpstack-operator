@@ -42,4 +42,4 @@ spec:
       adrPluginFiles:
         configMapName: chirpstack-adr-plugin-files
   restApi:
-    enabled: true
+    enabled: false
