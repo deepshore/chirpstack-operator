@@ -68,7 +68,7 @@ pub mod spec {
             use schemars::JsonSchema;
             use serde::{Deserialize, Serialize};
 
-            #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
+            #[derive(Debug, Serialize, Deserialize, Clone, JsonSchema)]
             #[serde(rename_all = "camelCase")]
             pub struct Service {
                 #[serde(rename = "type")]
@@ -83,6 +83,16 @@ pub mod spec {
 
             fn default_port() -> i32 {
                 8080
+            }
+
+            impl Default for Service {
+                fn default() -> Service {
+                    Service{
+                        service_type: ServiceType::default(),
+                        port: 8080,
+                        node_port: None,
+                    }
+                }
             }
         }
 

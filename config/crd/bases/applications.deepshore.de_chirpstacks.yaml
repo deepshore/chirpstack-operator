@@ -34,7 +34,7 @@ spec:
                       type: boolean
                     service:
                       default:
-                        port: 0
+                        port: 8080
                         type: ClusterIP
                       properties:
                         nodePort:
@@ -55,16 +55,12 @@ spec:
                     workload:
                       default:
                         image:
-                          registry: ""
-                          repository: ""
-                          tag: ""
-                        replicas: 0
+                          registry: docker.io
+                          repository: chirpstack/chirpstack-rest-api
+                          tag: "4"
+                        replicas: 1
                       properties:
                         image:
-                          default:
-                            registry: docker.io
-                            repository: chirpstack/chirpstack-rest-api
-                            tag: "4"
                           properties:
                             registry:
                               type: string
@@ -78,9 +74,11 @@ spec:
                             - tag
                           type: object
                         replicas:
-                          default: 1
                           format: int32
                           type: integer
+                      required:
+                        - image
+                        - replicas
                       type: object
                   required:
                     - enabled

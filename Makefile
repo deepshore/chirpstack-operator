@@ -13,7 +13,7 @@ config/crd/bases/applications.deepshore.de_chirpstacks.yaml: chirpstack-operator
 build:
 	cargo build
 
-run-controller:
+run-controller: install
 	cargo build
 	RUST_LOG=debug cargo run --bin controller
 
