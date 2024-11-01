@@ -23,9 +23,6 @@ install: config/crd/bases/applications.deepshore.de_chirpstacks.yaml
 uninstall:
 	kubectl delete -k config/crd
 
-uninstall:
-	kubectl delete -k config/crd
-
 deploy-sample:
 	kubectl apply -k test/sample
 
@@ -40,10 +37,9 @@ bundle:
 bundle-image: bundle
 	docker buildx build --tag $(BUNDLE_IMAGE) -f bundle.Dockerfile . &&
 
-minikube: config/crd/bases/applications.deepshore.de_chirpstacks.yaml
+minikube:
 	minikube status 2>/dev/null 1>/dev/null || minikube start --addons=registry
 	kubectl apply -k test/dep
-	kubectl apply -k config/crd
 
 test-cluster:
 	sh test/script/setup.sh

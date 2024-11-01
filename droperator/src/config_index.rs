@@ -5,6 +5,7 @@ use k8s_openapi::api::core::v1::{ConfigMap, Secret};
 use k8s_openapi::Resource as KubeResource;
 use kube::{
     core::{NamespaceResourceScope, Resource},
+    api::{ObjectMeta},
     runtime::reflector::{ObjectRef},
     Api, Client, ResourceExt,
 };
@@ -182,9 +183,13 @@ where
         let api: Api<R> = Api::namespaced(client.clone(), namespace);
         async move {
             let result = match api.get(&name).await {
-                Ok(resource) => match serde_json::to_string(&resource) {
-                    Ok(json) => Ok(json),
-                    Err(e) => Err(format!("{e:?}")),
+                Ok(resource) => {
+                    let mut normalized_resource = resource.clone();
+                    *(normalized_resource.meta_mut()) = ObjectMeta::default();
+                    match serde_json::to_string(&normalized_resource) {
+                        Ok(json) => Ok(json),
+                        Err(e) => Err(format!("{e:?}")),
+                    }
                 },
                 Err(e) => Err(format!("{e:?}")),
             };
