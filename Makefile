@@ -41,8 +41,12 @@ minikube:
 	minikube status 2>/dev/null 1>/dev/null || minikube start --addons=registry
 	kubectl apply -k test/dep
 
-test-cluster:
-	sh test/script/setup.sh
+.PHONY: test
+test:
+	BLACKJACK_LOG_LEVEL=blackjack=info blackjack test/blackjack
+
+test-debug:
+	BLACKJACK_LOG_LEVEL=blackjack=trace blackjack test/blackjack
 
 clean:
 	rm -fr bundle*

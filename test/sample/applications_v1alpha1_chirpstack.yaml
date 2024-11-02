@@ -11,7 +11,7 @@ metadata:
 spec:
   server:
     workload:
-      type: statefulset
+      type: deployment
       image:
         registry: docker.io
         repository: chirpstack/chirpstack

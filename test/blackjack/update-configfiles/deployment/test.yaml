@@ -1,0 +1,74 @@
+name: update-chirpstack-change-workloadtype-deployment
+steps:
+  - name: precondition
+    watch:
+      - name: pre-pods
+        group: ''
+        version: v1
+        kind: Pod
+      - name: crd-pods
+        group: ''
+        version: v1
+        kind: Pod
+        labels:
+          app: chirpstack-test
+    apply:
+      - dir: precondition
+    wait:
+      - target: pre-pods
+        timeout: 60
+        condition:
+          and:
+            - size: 6
+            - all:
+                status:
+                  conditions:
+                    - type: Ready
+                      status: "True"
+      - target: crd-pods
+        timeout: 30
+        condition:
+          and:
+            - size: 3
+            - all:
+                status:
+                  conditions:
+                    - type: Ready
+                      status: "True"
+            - all:
+                metadata:
+                  ownerReferences:
+                    - kind: ReplicaSet
+  - name: input
+    bucket:
+      - name: crd-pods
+        operations:
+          - delete
+    watch:
+      - name: crd-pods-restarted
+        group: ''
+        version: v1
+        kind: Pod
+        labels:
+          app: chirpstack-test
+    apply:
+      - dir: input
+    wait:
+      - target: crd-pods
+        timeout: 30
+        condition:
+          size: 0
+      - target: crd-pods-restarted
+        timeout: 30
+        condition:
+          and:
+            - size: 3
+            - all:
+                status:
+                  conditions:
+                    - type: Ready
+                      status: "True"
+            - all:
+                metadata:
+                  ownerReferences:
+                    - kind: ReplicaSet

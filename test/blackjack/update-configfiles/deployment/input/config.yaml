@@ -1,0 +1,551 @@
+apiVersion: v1
+data:
+  chirpstack.toml: "# Logging configuration\n[logging]\n\n    # Log level.\n    #\n
+    \   # Valid options are:\n    #   * TRACE\n    #   * DEBUG\n    #   * INFO\n    #
+    \  * WARN\n    #   * ERROR\n    #   * OFF\n    level=\"INFO\"\n\n    # Log as
+    JSON.\n    json=false\n\n# PostgreSQL configuration.\n[postgresql]\n\n    # PostgreSQL
+    DSN.\n    #\n    # Format example: postgres://<USERNAME>:<PASSWORD>@<HOSTNAME>/<DATABASE>?sslmode=<SSLMODE>.\n
+    \   #\n    # SSL mode options:\n    #  * disable - no SSL\n    #  * require -
+    Always SSL (skip verification)\n    #  * verify-ca - Always SSL (verify that the
+    certificate presented by the server was signed by a trusted CA)\n    #  * verify-full
+    - Always SSL (verify that the certification presented by the server was signed
+    by a trusted CA and the server host name matches the one in the certificate)\n
+    \   dsn=\"postgresql://$CHIRPSTACK_POSTGRESQL_DSN_USERNAME:$CHIRPSTACK_POSTGRESQL_DSN_PASSWORD@postgres/chirpstack?sslmode=disable\"\n\n
+    \   # Max open connections.\n    #\n    # This sets the max. number of open connections
+    that are allowed in the\n    # PostgreSQL connection pool.\n    max_open_connections=1\n\n
+    \   # Min idle connections.\n    #\n    # This sets the min. number of idle connections
+    in the PostgreSQL connection\n    # pool (0 = equal to max_open_connections).\n
+    \   min_idle_connections=0\n\n\n# Redis configuration.\n[redis]\n\n    # Server
+    address or addresses.\n    #\n    # Example formats:\n    #   redis://127.0.0.1:6379\n
+    \   #   redis://:password@127.0.0.1:6379\n    #   redis://username:password@127.0.0.1:6379\n
+    \   #\n    # Set multiple addresses when connecting to a cluster.\n    servers=[\n
+    \       \"redis://redis:6379\",\n    ]\n\n    # Redis Cluster.\n    #\n    # Set
+    this to true when the provided URLs are pointing to a Redis Cluster\n    # instance.\n
+    \   cluster=false\n\n    # Key prefix.\n    #\n    # A key prefix can be used
+    to avoid key collisions when multiple deployments\n    # are using the same Redis
+    database and it is not possible to separate\n    # keys by database index (e.g.
+    when using Redis Cluster, which does not\n    # support multiple databases).\n
+    \   key_prefix=\"\"\n\n    # Max open connections.\n    #\n    # This sets the
+    max. number of open connections that are allowed in the\n    # Redis connection
+    pool.\n    max_open_connections=10\n\n    # Min idle connections.\n    #\n    #
+    This sets the min. number of idle connections in the Redis connection\n    # pool
+    (0 = equal to max_open_connections).\n    min_idle_connections=0\n\n\n# API interface
+    configuration.\n[api]\n\n    # interface:port to bind the API interface to.\n
+    \   bind=\"0.0.0.0:8080\"\n\n    # Secret.\n    #\n    # This secret is used for
+    generating login and API tokens, make sure this\n    # is never exposed. Changing
+    this secret will invalidate all login and API\n    # tokens. The following command
+    can be used to generate a random secret:\n    #   openssl rand -base64 32\n    secret=\"$CHIRPSTACK_API_SECRET\"\n\n\n#
+    Global gateway configuration.\n# Please note that backend configuration can be
+    found in the per-region\n# configuration.\n[gateway]\n\n    # CA certificate and
+    key file (optional).\n    #\n    # If setting the CA certificate and key file
+    options, ChirpStack \n    # will generate client certificates which can be used
+    by the gateway for\n    # authentication and authorization. The Common Name of
+    the certificate will\n    # be set to the Gateway ID.\n    ca_key=\"\"\n    ca_cert=\"\"\n\n
+    \   # Certificate lifetime.\n    #\n    # This defines how long (after generating)
+    the certificate remains valid.\n    client_cert_lifetime=\"11months 30days 3h
+    50m 24s\"\n\n    # Allow unknown gateways.\n    #\n    # If set to true, then
+    uplinks received from gateways not configured in\n    # ChirpStack will be allowed.\n
+    \   allow_unknown_gateways=false\n\n\n# Network related configuration.\n[network]\n\n
+    \   # Network identifier (NetID, 3 bytes) encoded as HEX (e.g. 010203).\n    net_id=\"000000\"\n\n
+    \   # DevAddr prefix(es).\n    #\n    # This makes it possible to configure one
+    or multiple sub-ranges within\n    # the configured NetID. If left blank, then
+    the complete DevAddr space\n    # provided by the configured NetID will be used.\n
+    \   # If multiple prefixes are configured, a random prefix will be chosen when\n
+    \   # generating a DevAddr.\n    #\n    # Example configuration:\n    # dev_addr_prefixes=[\"0000ff00/24\"]\n
+    \   #\n    # This example configures the DevAddr range to 0000ff00 - 0000ffff.\n
+    \   # The /24 means that the 24MSB of the prefix will be used, meaning that the\n
+    \   # 8LSB will be used as address space.\n    dev_addr_prefixes=[\n    ]\n\n
+    \   # Enabled regions.\n    #\n    # Multiple regions can be enabled simultaneously.
+    Each region must match\n    # the 'name' parameter of the region configuration
+    in '[[regions]]'.\n    enabled_regions=[\n        \"eu868\",   \n    ]\n\n    #
+    Device session expiration.\n    #\n    # The TTL value defines the time after
+    which a device-session expires\n    # after no activity.\n    device_session_ttl=\"1month
+    13h 26m 24s\"\n\n    # Time to wait for uplink de-duplication.\n    #\n    # This
+    is the time that ChirpStack will wait for other gateways to receive\n    # the
+    same uplink frame. Please note that this value affects the\n    # roundtrip time.
+    The total roundtrip time (which includes network latency)\n    # must be less
+    than the (first) receive-window.\n    deduplication_delay=\"200ms\"\n\n    # Get
+    downlink data delay.\n    #\n    # This is the time that ChirpStack waits between
+    forwarding data to the\n    # integration(s) and reading data from the queue.
+    A higher value means that\n    # an end-application has more time to schedule
+    a downlink queue item which\n    # can be processed within the same uplink / downlink
+    transaction.\n    # Please note that this value has influence on the uplink /
+    downlink\n    # roundtrip time. Setting this value too high means ChirpStack will
+    be\n    # unable to respond to the device within its receive-window.\n    get_downlink_data_delay=\"100ms\"\n\n
+    \   # Mac-commands disabled.\n    mac_commands_disabled=false\n\n    # Custom
+    ADR plugins.\n    #\n    # The custom ADR plugin must be implemented in JavaScript.
+    For an example\n    # skeleton, please see:\n    # https://github.com/chirpstack/chirpstack/blob/master/examples/adr_plugins/plugin_skeleton.js\n
+    \   adr_plugins=[\n    ]\n\n    # Scheduler settings.\n    [network.scheduler]\n\n
+    \   # Scheduler interval.\n    #\n    # The interval in which the downlink scheduler
+    for multicast, Class-B and\n    # Class-C runs.\n    interval=\"1s\"\n\n    #
+    Class-A lock duration.\n    #\n    # This defines the lock duration between receiving
+    a Class-A uplink and\n    # the next scheduler-run for a device. The purpose of
+    this lock is to\n    # avoid collisions between Class-A and Class-B/C downlinks.\n
+    \   class_a_lock_duration=\"5s\"\n\n    # Class-C lock duration.\n    #\n    #
+    This defines the lock duration between scheduling two Class-C downlink\n    #
+    payloads for the same device. The purpose of this lock is to avoid\n    # overlap
+    between scheduling Class-C downlinks and / or spreading the \n    # downlink capacity
+    load on the gateway.\n    class_c_lock_duration=\"5s\"\n\n    # Multicast Class-C
+    margin.\n    #\n    # This defines the minimum margin between scheduling multiple
+    multicast downlinks\n    # (within the same multicast-group). This value must
+    be equal or greater than the\n    # scheduler interval.\n    multicast_class_c_margin=\"5s\"\n\n
+    \   # Multicast Class-B margin.\n    #\n    # This defines the minimum margin
+    between scheduling multiple multicast downlinks\n    # (within the same multicast-group).
+    This value must be equal or greater than the\n    # scheduler interval.\n    multicast_class_b_margin=\"5s\"\n\n\n#
+    Monitoring related configuration.\n[monitoring]\n\n    # interface:port to bind
+    the monitoring endpoint to (optional).\n    #\n    # /health  - Returns 200 in
+    case the healthchecks have passed.\n    # /metrics - Returns metrics which can
+    be scraped by Prometheus.\n    #\n    # If not set, this endpoint will be disabled\n
+    \   bind=\"0.0.0.0:9090\"\n    \n    # Meta-log max history.\n    #\n    # This
+    defines the max number of meta records that will be persisted in Redis Streams.\n
+    \   # Setting this value to 0 disables this feature.\n    meta_log_max_history=10\n\n
+    \   # Gateway frame-log max history.\n    #\n    # This defines the max number
+    of frame-log records that will be persisted in Redis Streams.\n    # This stream
+    contains the uplink and downlink frames of all gateways.\n    # Setting this value
+    to 0 disables this feature.\n    gateway_frame_log_max_history=10\n\n    # Device
+    frame-log max history.\n    #\n    # This defines the max number of frame-log
+    records that will be persisted in Redis Streams.\n    # This stream contains the
+    uplink and downlink frames of all devices.\n    # Setting this value to 0 disables
+    this feature.\n    device_frame_log_max_history=10\n\n    # Device event-log max
+    history.\n    #\n    # This defines the max number of event-log records that will
+    be persisted in Redis Streams.\n    # This stream contains the events of all devices.\n
+    \   # Setting this value to 0 disables this feature.\n    device_event_log_max_history=10\n\n
+    \   # Per gateway frame-log max history.\n    #\n    # Equal to the gateway_frame_log_max_history,
+    but for each gateway a new Redis Stream\n    # is created.\n    # Setting this
+    value to 0 disables this feature.\n    per_gateway_frame_log_max_history=10\n\n
+    \   # Per gateway frame-log TTL.\n    #\n    # This defines the TTL of the Redis
+    Stream key.\n    per_gateway_frame_log_ttl=\"1month 13h 26m 24s\"\n\n    # Per
+    device frame-log max history.\n    #\n    # Equal to the device_frame_log_max_history,
+    but for each device a new Redis Stream\n    # is created.\n    # Setting this
+    value to 0 disables this feature.\n    per_device_frame_log_max_history=10\n\n
+    \   # Per device frame-log TTL.\n    #\n    # This defines the TTL of the Redis
+    Stream key.\n    per_device_frame_log_ttl=\"1month 13h 26m 24s\"\n\n    # Per
+    device event-log max history.\n    #\n    # Equal to the device_event_log_max_history,
+    but for each device a new Redis Stream\n    # is created.\n    # Setting this
+    value to 0 disables this feature.\n    per_device_event_log_max_history=10\n\n
+    \   # Per device event-log TTL.\n    #\n    # This defines the TTL of the Redis
+    Stream key.\n    per_device_event_log_ttl=\"1month 13h 26m 24s\"\n\n\n# Global
+    integration related configuration.\n[integration]\n\n    # Enabled integrations
+    (global).\n    enabled = [\n        \"mqtt\",   \n    ]\n\n    # MQTT integration
+    configuration.\n    [integration.mqtt]\n\n    # Event topic template.\n    event_topic=\"application/{{application_id}}/device/{{dev_eui}}/event/{{event}}\"\n\n
+    \   # Command topic.\n    #\n    # This is the topic on which the MQTT subscribes
+    for receiving (enqueue) commands.\n    command_topic=\"application/{{application_id}}/device/{{dev_eui}}/command/{{command}}\"\n\n
+    \   # Use JSON encoding instead of Protobuf (binary).\n    json=true\n\n    #
+    MQTT server (e.g. scheme://host:port where scheme is tcp, ssl or ws)\n    server=\"tcp://mosquitto:1883/\"\n\n
+    \   # Connect with the given username (optional)\n    #username=\"$CHIRPSTACK_INTEGRATION_MQTT_USERNAME\"\n\n
+    \   # Connect with the given password (optional)\n    #password=\"$CHIRPSTACK_INTEGRATION_MQTT_PASSWORD\"\n\n
+    \   # Quality of service level\n    #\n    # 0: at most once\n    # 1: at least
+    once\n    # 2: exactly once\n    #\n    # Note: an increase of this value will
+    decrease the performance.\n    # For more information: https://www.hivemq.com/blog/mqtt-essentials-part-6-mqtt-quality-of-service-levels\n
+    \   qos=1\n\n    # Clean session\n    #\n    # Set the \"clean session\" flag
+    in the connect message when this client\n    # connects to an MQTT broker. By
+    setting this flag you are indicating\n    # that no messages saved by the broker
+    for this client should be delivered.\n    clean_session=false\n\n    # Client
+    ID\n    #\n    # Set the client id to be used by this client when connecting to
+    the MQTT\n    # broker. A client id must be no longer than 23 characters. If left
+    blank,\n    # a random id will be generated by ChirpStack.\n    client_id=\"\"\n\n
+    \   # Keep alive interval.\n    #\n    # This defines the maximum time that that
+    should pass without communication\n    # between the client and server.\n    keep_alive_interval=\"30s\"\n\n
+    \   # CA certificate file (optional)\n    #\n    # Use this when setting up a
+    secure connection (when server uses ssl://...)\n    # but the certificate used
+    by the server is not trusted by any CA certificate\n    # on the server (e.g.
+    when self generated).\n    ca_cert=\"\"\n\n    # TLS certificate file (optional)\n
+    \   tls_cert=\"\"\n\n    # TLS key file (optional)\n    tls_key=\"\"\n\n\n    #
+    Configuration for MQTT clients.\n    [integration.mqtt.client]\n\n        # CA
+    certificate and key file (optional).\n        #\n        # If setting the CA certificate
+    and key file options, ChirpStack \n        # will generate client certificates
+    which can be used by the MQTT clients for\n        # authentication and authorization.
+    The Common Name of the certificate will\n        # be set to the ID of the application.\n
+    \       ca_key=\"\"\n\n        ca_cert=\"\"\n\n        # Certificate lifetime.\n
+    \       #\n        # This defines how long (after generating) the certificate
+    remains valid.\n        client_cert_lifetime=\"11months 30days 3h 50m 24s\"\n\n\n
+    \   # PostgreSQL integration configuration.\n    [integration.postgresql]\n\n
+    \   # PostgreSQL DSN.\n    #\n    # Format example: postgres://<USERNAME>:<PASSWORD>@<HOSTNAME>/<DATABASE>?sslmode=<SSLMODE>.\n
+    \   #\n    # SSL mode options:\n    #  * disable - no SSL\n    #  * require -
+    Always SSL (skip verification)\n    #  * verify-ca - Always SSL (verify that the
+    certificate presented by the server was signed by a trusted CA)\n    #  * verify-full
+    - Always SSL (verify that the certification presented by the server was signed
+    by a trusted CA and the server host name matches the one in the certificate)\n
+    \   dsn=\"postgresql://chirpstack_integration:chirpstack_integration@localhost/chirpstack_integration?sslmode=disable\"\n\n
+    \   # Max open connections.\n    #\n    # This sets the max. number of open connections
+    that are allowed in the\n    # PostgreSQL connection pool.\n    max_open_connections=10\n\n
+    \   # Min idle connections.\n    #\n    # This sets the min. number of idle connections
+    in the PostgreSQL connection\n    # pool (0 = equal to max_open_connections).\n
+    \   min_idle_connections=0\n\n\n    # AMQP / RabbitMQ integration configuration.\n
+    \   [integration.amqp]\n\n    # Server URL.\n    #\n    # See for a specification
+    of all the possible options:\n    # https://www.rabbitmq.com/uri-spec.html\n    url=\"amqp://guest:guest@localhost:5672\"\n\n
+    \   # Event routing key.\n    #\n    # This is the event routing-key template
+    used when publishing device\n    # events. Messages will be published to the \"amq.topic\"
+    exchange.\n    event_routing_key=\"\"\n\n    # Use JSON encoding instead of Protobuf
+    (binary).\n    json=true\n\n\n    # Kafka integration configuration.\n    [integration.kafka]\n\n
+    \   # Brokers.\n    brokers=[\n        \"localhost:9092\",\n    ]\n\n    # TLS.\n
+    \   #\n    # Set this to true when the Kafka client must connect using TLS to
+    the Broker.\n    tls=false\n\n    # Topic for events.\n    topic=\"chirpstack\"\n\n
+    \   # Template for keys included in Kafka messages.\n    # Kafka uses the key
+    for distributing messages over partitions. You can use\n    # this to ensure some
+    subset of messages end up in the same partition, so\n    # they can be consumed
+    in-order. And Kafka can use the key for data retention\n    # decisions.  A header
+    \"event\" with the event type is included in each\n    # message. There is no
+    need to parse it from the key.\n    event_key=\"\"\n\n    # Username (optional).\n
+    \   username=\"\"\n\n    # Password.\n    password=\"\"\n\n    # Mechanism.\n
+    \   #\n    # Valid options are:\n    # * PLAIN\n    # * SCRAM-SHA-256\n    # *
+    SCRAM-SHA-512\n    mechanism=\"PLAIN\"\n\n    # Use JSON encoding instead of Protobuf
+    (binary).\n    json=true\n\n\n# Codec configuration.\n[codec]\n\n    # JS codec
+    configuration.\n    [codec.js]\n\n    # Maximum execution time.\n    max_execution_time=\"100ms\"\n\n\n#
+    User authentication configuration.\n[user_authentication]\n\n    # Enabled authentication
+    backend.\n    #\n    # Options are:\n    #  * internal       - Internal authentication
+    backend (default).\n    #  * openid_connect - OpenID Connect based backend.\n
+    \   #  * oauth2         - OAuth2 based backend.\n    enabled=\"internal\"\n\n
+    \   # OpenID Connect.\n    [user_authentication.openid_connect]\n\n            #
+    Registration enabled.\n            #\n            # Enabling this will automatically
+    register the user when it is not yet present\n            # in the ChirpStack
+    database. There is no registration form as the user information\n            #
+    is automatically received using the OpenID Connect provided information.\n            #
+    The user will not be associated with any organization, but in order to\n            #
+    facilitate the automatic onboarding of users, it is possible to configure a\n
+    \           # registration callback URL (next config option).\n            registration_enabled=false\n
+    \   \n            # Registration callback URL.\n            #\n            # This
+    (optional) endpoint will be called on the registration of the user and\n            #
+    can implement the association of the user with an organization, create a new\n
+    \           # organization, ...\n            # ChirpStack will make a HTTP POST
+    call to this endpoint,\n            # with the following URL parameters:\n            #
+    - user_id, of the newly created user in ChirpStack.\n            #\n            #
+    The POST body contains a JSON payload with the OpenID Connect UserInfo payload.\n
+    \           registration_callback_url=\"\"\n    \n            # Provider URL.\n
+    \           # This is the URL of the OpenID Connect provider.\n            # Example:
+    https://auth.example.org\n            provider_url=\"\"\n    \n            # Client
+    ID.\n            client_id=\"\"\n    \n            # Client secret.\n            client_secret=\"$CHIRPSTACK_USER_AUTHENTICATION_OPENID_CONNECT_CLIENT_SECRET\"\n
+    \   \n            # Redirect URL.\n            #\n            # This must contain
+    the ChirpStack Application Server web-interface hostname\n            # with '/auth/oidc/callback'
+    path, e.g. https://example.com/auth/oidc/callback.\n            redirect_url=\"\"\n
+    \   \n            # Logout URL.\n            #\n            # When set, ChirpStack
+    Application Server will redirect to this URL instead\n            # of redirecting
+    to the login page.\n            logout_url=\"\"\n            \n            ##
+    Login redirect.\n            #\n            # If set to true, then ChirpStack
+    will immediately redirect to the OAuth2\n            # provider for login.\n            login_redirect=false\n
+    \           \n            # Login label.\n            #\n            # The login
+    label is used in the web-interface login form.\n            login_label=\"\"\n\n
+    \           # Assume e-mail verified.\n            #\n            # If set to
+    true, then ChirpStack will ignore the email_verified received\n            # from
+    the OpenID Connect provider, assuming it will be true. Some\n            # providers
+    do not provide this field, in which case setting this value\n            # is
+    needed.\n            assume_email_verified=false\n        \n            # Scopes.\n
+    \           #\n            # This configures the scopes that are used during login.
+    You must at least define\n            # \"email\" and \"profile\".\n            scopes=[\n
+    \                   \"email\",\n                    \"profile\",\n            ]\n\n#
+    Join Server configuration.\n[join_server]\n\n    # Per Join Server configuration
+    (this can be repeated).\n    # Example:\n    # [[join_server.servers]]\n    #\n
+    \   #   # JoinEUI of the Join Server.\n    #   join_eui=\"0102030405060708\"\n
+    \   #\n    #   # Server endpoint.\n    #   server=\"https://example.com:1234/join/endpoint\"\n\n
+    \   #   # Use the async interface scheme.\n    #   async_interface=false\n\n    #
+    \  # Async interface request timeout.\n    #   async_interface_timeout=\"1s\"\n\n
+    \   #   # CA certificate (optional).\n    #   #\n    #   # Set this to validate
+    the join-server server certificate (e.g. if the\n    #   # certificate was self-signed).\n
+    \   #   ca_cert=\"/path/to/ca.pem\"\n\n    #   # TLS client-certificate (optional).\n
+    \   #   #\n    #   # Set this to enable client-certificate authentication with
+    the join-server.\n    #   tls_cert=\"/path/to/tls_cert.pem\"\n\n    #   # TLS
+    client-certificate key (optional).\n    #   #\n    #   # Set this to enable client-certificate
+    authentication with the join-server.\n    #   tls_key=\"/path/to/tls_key.pem\"\n\n\n#
+    Backend Interfaces configuration (optional).\n[backend_interfaces]\n\n    # interface:port
+    to bind the Backend Interfaces API to.\n    #\n    # Note: this interface is used
+    both for passive-roaming and when\n    # integrating with Join Servers that implement
+    the async interface.\n    # Leaving this option blank will disable the Backend
+    Interfaces API,\n    # which is fine in most cases.\n    bind=\"\"\n\n    # CA
+    certificate (path).\n    ca_cert=\"\"\n\n    # TLS certificate (path).       \n
+    \   tls_cert=\"\"\n\n    # TLS key (path).\n    tls_key=\"\"\n\n\n# Roaming configuration.\n[roaming]\n\n
+    \   # Resolve NetID domain suffix.\n    resolve_net_id_domain_suffix=\"\"\n\n
+    \   # Per server roaming configuration (this can be repeated).\n    # Example:\n
+    \   # [[roaming.servers]]\n    #\n    #  # NetID of the roaming server.\n    #
+    \ net_id=\"010203\"\n    #\n    #  # Async timeout (set to 0 to disable async
+    interface).\n    #  async_timeout=\"0s\"\n    #\n    #  # Passive-roaming session
+    lifetime (set to 0 for stateless).\n    #  passive_roaming_lifetime=\"0s\"\n    #\n
+    \   #  # Passive-roaming KEK label (optional).\n    #  #\n    #  # If set, the
+    session-keys will be encrypted using the given KEK.\n    #  passive_roaming_kek_label=\"\"\n
+    \   #\n    #  # Server.\n    #  #\n    #  # If set, this will bypass the DNS resolving
+    of the server.\n    #  server=\"https://example.com:1234\"\n    #\n    #  # Use
+    target role suffix.\n    #  #\n    #  # Depending the context of the remote server,
+    this will add\n    #  # the /sns or /fns path to the server endpoint.\n    #  use_target_role_suffix=false\n
+    \   #\n    #  # CA certificate (path).\n    #  ca_cert=\"\"\n    #\n    #  # TLS
+    certificate (path).\n    #  tls_cert=\"\"\n    #\n    #  # TLS key (path).\n    #
+    \ tls_key=\"\"\n    #\n    #  # Authorization header.\n    #  #\n    #  # Optional
+    value of the Authorization header, e.g. token or password.\n    #  authorization_header=\"\"\n\n\n#
+    Key encryption keys (KEKs).\n#\n# KEKs can be used to encrypt session-keys between
+    two endpoints,\n# for example a Join Server and Network Server, or between two\n#
+    Network Servers in case of a roaming agreement. If used, the\n# sender will encrypt
+    the session-key with the KEK and indicates\n# to the receiver the label of the
+    KEK that was used for encryption,\n# such that the receiver is able to decrypt
+    the session-key.\n#\n# Example (can be repeated):\n# [[keks]]\n#\n#   # KEK label.\n#
+    \  label=\"kek-label\"\n\n#   # Encryption key.\n#   kek=\"01020304050607080102030405060708\"\n\n"
+  region_eu433.toml: "# This file contains an example EU433 configuration.\n[[regions]]\n\n#
+    ID is an user-defined identifier for this region.\nid=\"eu433\"\n\n# Description
+    is a short description for this region.\ndescription=\"EU443\"\n\n# Common-name
+    refers to the common-name of this region as defined by\n# the LoRa Alliance.\ncommon_name=\"EU433\"\n\n\n#
+    Gateway configuration.\n[regions.gateway]\n\n    # Force gateways as private.\n
+    \   #\n    # If enabled, gateways can only be used by devices under the same tenant.\n
+    \   force_gws_private=false\n\n\n    # Gateway backend configuration.\n    [regions.gateway.backend]\n\n
+    \   # The enabled backend type.\n    enabled=\"mqtt\"\n\n    # MQTT configuration.\n
+    \   [regions.gateway.backend.mqtt]\n\n        # Topic prefix.\n        #\n        #
+    The topic prefix can be used to define the region of the gateway.\n        # Note,
+    there is no need to add a trailing '/' to the prefix. The trailing\n        #
+    '/' is automatically added to the prefix if it is configured.\n        topic_prefix=\"eu433\"\n\n
+    \       # MQTT server (e.g. scheme://host:port where scheme is tcp, ssl or ws)\n
+    \       server=\"tcp://:1883/\"\n\n        # Connect with the given username (optional)\n
+    \       username=\"$REGIONS_EU433_GATEWAY_BACKEND_MQTT_USERNAME\"\n\n        #
+    Connect with the given password (optional)\n        password=\"$REGIONS_EU433_GATEWAY_BACKEND_MQTT_PASSWORD\"\n\n
+    \       # Quality of service level\n        #\n        # 0: at most once\n        #
+    1: at least once\n        # 2: exactly once\n        #\n        # Note: an increase
+    of this value will decrease the performance.\n        # For more information:
+    https://www.hivemq.com/blog/mqtt-essentials-part-6-mqtt-quality-of-service-levels\n
+    \       qos=0\n\n        # Clean session\n        #\n        # Set the \"clean
+    session\" flag in the connect message when this client\n        # connects to
+    an MQTT broker. By setting this flag you are indicating\n        # that no messages
+    saved by the broker for this client should be delivered.\n        clean_session=false\n\n
+    \       # Client ID\n        #\n        # Set the client id to be used by this
+    client when connecting to the MQTT\n        # broker. A client id must be no longer
+    than 23 characters. If left blank,\n        # a random id will be generated by
+    ChirpStack.\n        client_id=\"\"\n\n        # Keep alive interval.\n        #\n
+    \       # This defines the maximum time that that should pass without communication\n
+    \       # between the client and server.\n        keep_alive_interval=\"30s\"\n\n
+    \       # CA certificate file (optional)\n        #\n        # Use this when setting
+    up a secure connection (when server uses ssl://...)\n        # but the certificate
+    used by the server is not trusted by any CA certificate\n        # on the server
+    (e.g. when self generated).\n        ca_cert=\"\"\n\n        # TLS certificate
+    file (optional)\n        tls_cert=\"\"\n\n        # TLS key file (optional)\n
+    \       tls_key=\"\"\n\n\n    # Gateway channel configuration.\n    #\n    # Note:
+    this configuration is only used in case the gateway is using the\n    # ChirpStack
+    Concentratord daemon. In any other case, this configuration \n    # is ignored.\n
+    \   [[regions.gateway.channels]]\n    frequency=433175000\n    bandwidth=125000\n
+    \   modulation=\"LORA\"\n    spreading_factors=[7, 8, 9, 10, 11, 12]\n\n    [[regions.gateway.channels]]\n
+    \   frequency=433375000\n    bandwidth=125000\n    modulation=\"LORA\"\n    spreading_factors=[7,
+    8, 9, 10, 11, 12]\n\n    [[regions.gateway.channels]]\n    frequency=433575000\n
+    \   bandwidth=125000\n    modulation=\"LORA\"\n    spreading_factors=[7, 8, 9,
+    10, 11, 12]\n\n\n# Region specific network configuration.\n[regions.network]\n
+    \   \n    # Installation margin (dB) used by the ADR engine.\n    #\n    # A higher
+    number means that the network-server will keep more margin,\n    # resulting in
+    a lower data-rate but decreasing the chance that the\n    # device gets disconnected
+    because it is unable to reach one of the\n    # surrounded gateways.\n    installation_margin=10\n\n
+    \   # RX window (Class-A).\n    #\n    # Set this to:\n    # 0: RX1 / RX2\n    #
+    1: RX1 only\n    # 2: RX2 only\n    rx_window=0\n\n    # RX1 delay (1 - 15 seconds).\n
+    \   rx1_delay=1\n\n    # RX1 data-rate offset\n    rx1_dr_offset=0\n\n    # RX2
+    data-rate\n    rx2_dr=0\n\n    # RX2 frequency (Hz)\n    rx2_frequency=434665000\n\n
+    \   # Prefer RX2 on RX1 data-rate less than.\n    #\n    # Prefer RX2 over RX1
+    based on the RX1 data-rate. When the RX1 data-rate\n    # is smaller than the
+    configured value, then the Network Server will\n    # first try to schedule the
+    downlink for RX2, failing that (e.g. the gateway\n    # has already a payload
+    scheduled at the RX2 timing) it will try RX1.\n    rx2_prefer_on_rx1_dr_lt=0\n\n
+    \   # Prefer RX2 on link budget.\n    #\n    # When the link-budget is better
+    for RX2 than for RX1, the Network Server will first\n    # try to schedule the
+    downlink in RX2, failing that it will try RX1.\n    rx2_prefer_on_link_budget=false\n\n
+    \   # Downlink TX Power (dBm)\n    #\n    # When set to -1, the downlink TX Power
+    from the configured band will\n    # be used.\n    #\n    # Please consult the
+    LoRaWAN Regional Parameters and local regulations\n    # for valid and legal options.
+    Note that the configured TX Power must be\n    # supported by your gateway(s).\n
+    \   downlink_tx_power=-1\n\n    # ADR is disabled.\n    adr_disabled=false\n\n
+    \   # Minimum data-rate.\n    min_dr=0\n\n    # Maximum data-rate.\n    max_dr=5\n\n\n
+    \   # Rejoin-request configuration (LoRaWAN 1.1)\n    [regions.network.rejoin_request]\n\n
+    \   # Request devices to periodically send rejoin-requests.\n    enabled=false\n\n
+    \   # The device must send a rejoin-request type 0 at least every 2^(max_count_n
+    + 4)\n    # uplink messages. Valid values are 0 to 15.\n    max_count_n=0\n\n
+    \   # The device must send a rejoin-request type 0 at least every 2^(max_time_n
+    + 10)\n    # seconds. Valid values are 0 to 15.\n    #\n    # 0  = roughly 17
+    minutes\n    # 15 = about 1 year\n    max_time_n=0\n    \n\n    # Class-B configuration.\n
+    \   [regions.network.class_b]\n\n    # Ping-slot data-rate. \n    ping_slot_dr=3\n\n
+    \   # Ping-slot frequency (Hz)\n    #\n    # set this to 0 to use the default
+    frequency plan for the configured region\n    # (which could be frequency hopping).\n
+    \   ping_slot_frequency=0\n\n"
+  region_eu868.toml: "# This file contains an example EU868 configuration.\n[[regions]]\n\n
+    \ # ID is an user-defined identifier for this region.\n  id=\"eu868\"\n\n  # Description
+    is a short description for this region.\n  description=\"EU868\"\n\n  # Common-name
+    refers to the common-name of this region as defined by\n  # the LoRa Alliance.\n
+    \ common_name=\"EU868\"\n\n\n  # Gateway configuration.\n  [regions.gateway]\n\n
+    \   # Force gateways as private.\n    #\n    # If enabled, gateways can only be
+    used by devices under the same tenant.\n    force_gws_private=false\n\n\n    #
+    Gateway backend configuration.\n    [regions.gateway.backend]\n\n      # The enabled
+    backend type.\n      enabled=\"mqtt\"\n\n      # MQTT configuration.\n      [regions.gateway.backend.mqtt]\n\n
+    \       # Topic prefix.\n        #\n        # The topic prefix can be used to
+    define the region of the gateway.\n        # Note, there is no need to add a trailing
+    '/' to the prefix. The trailing\n        # '/' is automatically added to the prefix
+    if it is configured.\n        # topic_prefix=\"eu868\"\n\n        # Event topic
+    template.\n        event_topic=\"\"\n\n        # Command topic template.\n        command_topic=\"\"\n\n
+    \       # MQTT server (e.g. scheme://host:port where scheme is tcp, ssl or ws)\n
+    \       server=\"tcp://mosquitto:1883/\"\n\n        # Connect with the given username
+    (optional)\n        username=\"$REGIONS_EU868_GATEWAY_BACKEND_MQTT_USERNAME\"\n\n
+    \       # Connect with the given password (optional)\n        password=\"$REGIONS_EU868_GATEWAY_BACKEND_MQTT_PASSWORD\"\n\n
+    \       # Quality of service level\n        #\n        # 0: at most once\n        #
+    1: at least once\n        # 2: exactly once\n        #\n        # Note: an increase
+    of this value will decrease the performance.\n        # For more information:
+    https://www.hivemq.com/blog/mqtt-essentials-part-6-mqtt-quality-of-service-levels\n
+    \       qos=1\n\n        # Clean session\n        #\n        # Set the \"clean
+    session\" flag in the connect message when this client\n        # connects to
+    an MQTT broker. By setting this flag you are indicating\n        # that no messages
+    saved by the broker for this client should be delivered.\n        clean_session=false\n\n
+    \       # Client ID\n        #\n        # Set the client id to be used by this
+    client when connecting to the MQTT\n        # broker. A client id must be no longer
+    than 23 characters. If left blank,\n        # a random id will be generated by
+    ChirpStack.\n        client_id=\"$CHIRPSTACK_SERVER_POD_NAME-eu868\"\n\n        #
+    Keep alive interval.\n        #\n        # This defines the maximum time that
+    that should pass without communication\n        # between the client and server.\n
+    \       keep_alive_interval=\"30s\"\n\n        # CA certificate file (optional)\n
+    \       #\n        # Use this when setting up a secure connection (when server
+    uses ssl://...)\n        # but the certificate used by the server is not trusted
+    by any CA certificate\n        # on the server (e.g. when self generated).\n        ca_cert=\"\"\n\n
+    \       # TLS certificate file (optional)\n        tls_cert=\"\"\n\n        #
+    TLS key file (optional)\n        tls_key=\"\"\n\n\n    # Gateway channel configuration.\n
+    \   #\n    # Note: this configuration is only used in case the gateway is using
+    the\n    # ChirpStack Concentratord daemon. In any other case, this configuration
+    \n    # is ignored.\n    [[regions.gateway.channels]]\n      frequency=868100000\n
+    \     bandwidth=125000\n      modulation=\"LORA\"\n      spreading_factors=[7,
+    8, 9, 10, 11, 12]\n\n    [[regions.gateway.channels]]\n      frequency=868300000\n
+    \     bandwidth=125000\n      modulation=\"LORA\"\n      spreading_factors=[7,
+    8, 9, 10, 11, 12]\n\n    [[regions.gateway.channels]]\n      frequency=868500000\n
+    \     bandwidth=125000\n      modulation=\"LORA\"\n      spreading_factors=[7,
+    8, 9, 10, 11, 12]\n\n    [[regions.gateway.channels]]\n      frequency=867100000\n
+    \     bandwidth=125000\n      modulation=\"LORA\"\n      spreading_factors=[7,
+    8, 9, 10, 11, 12]\n\n    [[regions.gateway.channels]]\n      frequency=867300000\n
+    \     bandwidth=125000\n      modulation=\"LORA\"\n      spreading_factors=[7,
+    8, 9, 10, 11, 12]\n\n    [[regions.gateway.channels]]\n      frequency=867500000\n
+    \     bandwidth=125000\n      modulation=\"LORA\"\n      spreading_factors=[7,
+    8, 9, 10, 11, 12]\n\n    [[regions.gateway.channels]]\n      frequency=867700000\n
+    \     bandwidth=125000\n      modulation=\"LORA\"\n      spreading_factors=[7,
+    8, 9, 10, 11, 12]\n\n    [[regions.gateway.channels]]\n      frequency=867900000\n
+    \     bandwidth=125000\n      modulation=\"LORA\"\n      spreading_factors=[7,
+    8, 9, 10, 11, 12]\n  \n    [[regions.gateway.channels]]\n      frequency=868300000\n
+    \     bandwidth=250000\n      modulation=\"LORA\"\n      spreading_factors=[7]\n
+    \   \n    [[regions.gateway.channels]]\n      frequency=868800000\n      bandwidth=125000\n
+    \     modulation=\"FSK\"\n      datarate=50000\n\n\n  # Region specific network
+    configuration.\n  [regions.network]\n    \n    # Installation margin (dB) used
+    by the ADR engine.\n    #\n    # A higher number means that the network-server
+    will keep more margin,\n    # resulting in a lower data-rate but decreasing the
+    chance that the\n    # device gets disconnected because it is unable to reach
+    one of the\n    # surrounded gateways.\n    installation_margin=10\n\n    # RX
+    window (Class-A).\n    #\n    # Set this to:\n    # 0: RX1 / RX2\n    # 1: RX1
+    only\n    # 2: RX2 only\n    rx_window=0\n\n    # RX1 delay (1 - 15 seconds).\n
+    \   rx1_delay=1\n\n    # RX1 data-rate offset\n    rx1_dr_offset=0\n\n    # RX2
+    data-rate\n    rx2_dr=0\n\n    # RX2 frequency (Hz)\n    rx2_frequency=869525000\n\n
+    \   # Prefer RX2 on RX1 data-rate less than.\n    #\n    # Prefer RX2 over RX1
+    based on the RX1 data-rate. When the RX1 data-rate\n    # is smaller than the
+    configured value, then the Network Server will\n    # first try to schedule the
+    downlink for RX2, failing that (e.g. the gateway\n    # has already a payload
+    scheduled at the RX2 timing) it will try RX1.\n    rx2_prefer_on_rx1_dr_lt=0\n\n
+    \   # Prefer RX2 on link budget.\n    #\n    # When the link-budget is better
+    for RX2 than for RX1, the Network Server will first\n    # try to schedule the
+    downlink in RX2, failing that it will try RX1.\n    rx2_prefer_on_link_budget=false\n\n
+    \   # Downlink TX Power (dBm)\n    #\n    # When set to -1, the downlink TX Power
+    from the configured band will\n    # be used.\n    #\n    # Please consult the
+    LoRaWAN Regional Parameters and local regulations\n    # for valid and legal options.
+    Note that the configured TX Power must be\n    # supported by your gateway(s).\n
+    \   downlink_tx_power=-1\n\n    # ADR is disabled.\n    adr_disabled=false\n\n
+    \   # Minimum data-rate.\n    min_dr=0\n\n    # Maximum data-rate.\n    max_dr=5\n\n\n
+    \   # Rejoin-request configuration (LoRaWAN 1.1)\n    [regions.network.rejoin_request]\n\n
+    \     # Request devices to periodically send rejoin-requests.\n      enabled=false\n\n
+    \     # The device must send a rejoin-request type 0 at least every 2^(max_count_n
+    + 4)\n      # uplink messages. Valid values are 0 to 15.\n      max_count_n=0\n\n
+    \     # The device must send a rejoin-request type 0 at least every 2^(max_time_n
+    + 10)\n      # seconds. Valid values are 0 to 15.\n      #\n      # 0  = roughly
+    17 minutes\n      # 15 = about 1 year\n      max_time_n=0\n    \n\n    # Class-B
+    configuration.\n    [regions.network.class_b]\n\n      # Ping-slot data-rate.
+    \n      ping_slot_dr=3\n\n      # Ping-slot frequency (Hz)\n      #\n      # set
+    this to 0 to use the default frequency plan for the configured region\n      #
+    (which could be frequency hopping).\n      ping_slot_frequency=0\n\n\n    # Below
+    is the common set of extra channels. Please make sure that these\n    # channels
+    are also supported by the gateways.\n    [[regions.network.extra_channels]]\n
+    \   frequency=867100000\n    min_dr=0\n    max_dr=5\n\n    [[regions.network.extra_channels]]\n
+    \   frequency=867300000\n    min_dr=0\n    max_dr=5\n\n    [[regions.network.extra_channels]]\n
+    \   frequency=867500000\n    min_dr=0\n    max_dr=5\n\n    [[regions.network.extra_channels]]\n
+    \   frequency=867700000\n    min_dr=0\n    max_dr=5\n\n    [[regions.network.extra_channels]]\n
+    \   frequency=867900000\n    min_dr=0\n    max_dr=5\n\n"
+  region_us915_1.toml: "# This file contains an example US915 example (channels 8-15
+    + 65).\n[[regions]]\n\n  # ID is an use-defined identifier for this region.\n
+    \ id=\"us915_1\"\n\n  # Description is a short description for this region.\n
+    \ description=\"US915 (channels 8-15 + 65)\"\n\n  # Common-name refers to the
+    common-name of this region as defined by\n  # the LoRa Alliance.\n  common_name=\"US915\"\n\n\n
+    \ # Gateway configuration.\n  [regions.gateway]\n\n    # Force gateways as private.\n
+    \   #\n    # If enabled, gateways can only be used by devices under the same tenant.\n
+    \   force_gws_private=false\n\n    \n    # Gateway backend configuration.\n    [regions.gateway.backend]\n\n
+    \     # The enabled backend type.\n      enabled=\"mqtt\"\n\n      # MQTT configuration.\n
+    \     [regions.gateway.backend.mqtt]\n\n        # Topic prefix.\n        #\n        #
+    The topic prefix can be used to define the region of the gateway.\n        # Note,
+    there is no need to add a trailing '/' to the prefix. The trailing\n        #
+    '/' is automatically added to the prefix if it is configured.\n        topic_prefix=\"us915_1\"\n\n
+    \       # MQTT server (e.g. scheme://host:port where scheme is tcp, ssl or ws)\n
+    \       server=\"tcp://$MQTT_BROKER_HOST:1883\"\n\n        # Connect with the
+    given username (optional)\n        username=\"\"\n\n        # Connect with the
+    given password (optional)\n        password=\"\"\n\n        # Quality of service
+    level\n        #\n        # 0: at most once\n        # 1: at least once\n        #
+    2: exactly once\n        #\n        # Note: an increase of this value will decrease
+    the performance.\n        # For more information: https://www.hivemq.com/blog/mqtt-essentials-part-6-mqtt-quality-of-service-levels\n
+    \       qos=0\n\n        # Clean session\n        #\n        # Set the \"clean
+    session\" flag in the connect message when this client\n        # connects to
+    an MQTT broker. By setting this flag you are indicating\n        # that no messages
+    saved by the broker for this client should be delivered.\n        clean_session=false\n\n
+    \       # Client ID\n        #\n        # Set the client id to be used by this
+    client when connecting to the MQTT\n        # broker. A client id must be no longer
+    than 23 characters. If left blank,\n        # a random id will be generated by
+    ChirpStack.\n        client_id=\"\"\n\n        # Keep alive interval.\n        #\n
+    \       # This defines the maximum time that that should pass without communication\n
+    \       # between the client and server.\n        keep_alive_interval=\"30s\"\n\n
+    \       # CA certificate file (optional)\n        #\n        # Use this when setting
+    up a secure connection (when server uses ssl://...)\n        # but the certificate
+    used by the server is not trusted by any CA certificate\n        # on the server
+    (e.g. when self generated).\n        ca_cert=\"\"\n\n        # TLS certificate
+    file (optional)\n        tls_cert=\"\"\n\n        # TLS key file (optional)\n
+    \       tls_key=\"\"\n\n\n    # Gateway channel configuration.\n    #\n    # Note:
+    this configuration is only used in case the gateway is using the\n    # ChirpStack
+    Concentratord daemon. In any other case, this configuration \n    # is ignored.\n
+    \   [[regions.gateway.channels]]\n      frequency=903900000\n      bandwidth=125000\n
+    \     modulation=\"LORA\"\n      spreading_factors=[7, 8, 9, 10]\n\n    [[regions.gateway.channels]]\n
+    \     frequency=904100000\n      bandwidth=125000\n      modulation=\"LORA\"\n
+    \     spreading_factors=[7, 8, 9, 10]\n\n    [[regions.gateway.channels]]\n      frequency=904300000\n
+    \     bandwidth=125000\n      modulation=\"LORA\"\n      spreading_factors=[7,
+    8, 9, 10]\n\n    [[regions.gateway.channels]]\n      frequency=904500000\n      bandwidth=125000\n
+    \     modulation=\"LORA\"\n      spreading_factors=[7, 8, 9, 10]\n\n    [[regions.gateway.channels]]\n
+    \     frequency=904700000\n      bandwidth=125000\n      modulation=\"LORA\"\n
+    \     spreading_factors=[7, 8, 9, 10]\n\n    [[regions.gateway.channels]]\n      frequency=904900000\n
+    \     bandwidth=125000\n      modulation=\"LORA\"\n      spreading_factors=[7,
+    8, 9, 10]\n\n    [[regions.gateway.channels]]\n      frequency=905100000\n      bandwidth=125000\n
+    \     modulation=\"LORA\"\n      spreading_factors=[7, 8, 9, 10]\n\n    [[regions.gateway.channels]]\n
+    \     frequency=905300000\n      bandwidth=125000\n      modulation=\"LORA\"\n
+    \     spreading_factors=[7, 8, 9, 10]\n\n    [[regions.gateway.channels]]\n      frequency=904600000\n
+    \     bandwidth=500000\n      modulation=\"LORA\"\n      spreading_factors=[8]\n\n\n
+    \ # Region specific network configuration.\n  [regions.network]\n    \n    # Installation
+    margin (dB) used by the ADR engine.\n    #\n    # A higher number means that the
+    network-server will keep more margin,\n    # resulting in a lower data-rate but
+    decreasing the chance that the\n    # device gets disconnected because it is unable
+    to reach one of the\n    # surrounded gateways.\n    installation_margin=10\n\n
+    \   # RX window (Class-A).\n    #\n    # Set this to:\n    # 0: RX1 / RX2\n    #
+    1: RX1 only\n    # 2: RX2 only\n    rx_window=0\n\n    # RX1 delay (1 - 15 seconds).\n
+    \   rx1_delay=1\n\n    # RX1 data-rate offset\n    rx1_dr_offset=0\n\n    # RX2
+    data-rate\n    rx2_dr=8\n\n    # RX2 frequency (Hz)\n    rx2_frequency=923300000\n\n
+    \   # Prefer RX2 on RX1 data-rate less than.\n    #\n    # Prefer RX2 over RX1
+    based on the RX1 data-rate. When the RX1 data-rate\n    # is smaller than the
+    configured value, then the Network Server will\n    # first try to schedule the
+    downlink for RX2, failing that (e.g. the gateway\n    # has already a payload
+    scheduled at the RX2 timing) it will try RX1.\n    rx2_prefer_on_rx1_dr_lt=0\n\n
+    \   # Prefer RX2 on link budget.\n    #\n    # When the link-budget is better
+    for RX2 than for RX1, the Network Server will first\n    # try to schedule the
+    downlink in RX2, failing that it will try RX1.\n    rx2_prefer_on_link_budget=false\n\n
+    \   # Downlink TX Power (dBm)\n    #\n    # When set to -1, the downlink TX Power
+    from the configured band will\n    # be used.\n    #\n    # Please consult the
+    LoRaWAN Regional Parameters and local regulations\n    # for valid and legal options.
+    Note that the configured TX Power must be\n    # supported by your gateway(s).\n
+    \   downlink_tx_power=-1\n\n    # ADR is disabled.\n    adr_disabled=false\n\n
+    \   # Minimum data-rate.\n    min_dr=0\n\n    # Maximum data-rate.\n    max_dr=3\n\n
+    \   # Enabled uplink channels.\n    #\n    # Use this when ony a sub-set of the
+    by default enabled channels are being\n    # used. For example when only using
+    the first 8 channels of the US band.\n    # Note: when left blank / empty array,
+    all channels will be enabled.\n    enabled_uplink_channels=[8, 9, 10, 11, 12,
+    13, 14, 15, 65]\n\n\n    # Rejoin-request configuration (LoRaWAN 1.1)\n    [regions.network.rejoin_request]\n\n
+    \     # Request devices to periodically send rejoin-requests.\n      enabled=false\n\n
+    \     # The device must send a rejoin-request type 0 at least every 2^(max_count_n
+    + 4)\n      # uplink messages. Valid values are 0 to 15.\n      max_count_n=0\n\n
+    \     # The device must send a rejoin-request type 0 at least every 2^(max_time_n
+    + 10)\n      # seconds. Valid values are 0 to 15.\n      #\n      # 0  = roughly
+    17 minutes\n      # 15 = about 1 year\n      max_time_n=0\n    \n\n    # Class-B
+    configuration.\n    [regions.network.class_b]\n\n      # Ping-slot data-rate.
+    \n      ping_slot_dr=8\n\n      # Ping-slot frequency (Hz)\n      #\n      # set
+    this to 0 to use the default frequency plan for the configured region\n      #
+    (which could be frequency hopping).\n      ping_slot_frequency=0\n\n"
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: config
