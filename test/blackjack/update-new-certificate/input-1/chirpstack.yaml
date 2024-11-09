@@ -1,0 +1,27 @@
+apiVersion: applications.deepshore.de/v1alpha1
+kind: Chirpstack
+metadata:
+  name: test
+spec:
+  server:
+    configuration:
+      configFiles:
+        configMapName: config
+      envSecrets:
+        - env-secret-1
+        - env-secret-2
+      certificates:
+        - name: cert-1
+          secretName: cert-secret-1
+        - name: cert-2
+          secretName: cert-secret-2
+        - name: cert-3
+          secretName: cert-secret-3
+    service:
+      port: 8080
+      type: ClusterIP
+    workload:
+      type: deployment
+      replicas: 3
+  restApi:
+    enabled: false

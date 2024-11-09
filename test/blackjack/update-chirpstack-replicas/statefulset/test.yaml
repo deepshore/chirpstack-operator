@@ -1,11 +1,25 @@
-name: update-chirpstack-change-replicas-statefulset
 steps:
-  - name: precondition
+  - name: dep
     watch:
-      - name: pre-pods
+      - name: dep-pods
         group: ''
         version: v1
         kind: Pod
+    apply:
+      - dir: dep
+    wait:
+      - target: dep-pods
+        timeout: 60
+        condition:
+          and:
+            - size: 3
+            - all:
+                status:
+                  conditions:
+                    - type: Ready
+                      status: "True"
+  - name: precondition
+    watch:
       - name: crd-pods
         group: ''
         version: v1
@@ -15,18 +29,8 @@ steps:
     apply:
       - dir: precondition
     wait:
-      - target: pre-pods
-        timeout: 60
-        condition:
-          and:
-            - size: 6
-            - all:
-                status:
-                  conditions:
-                    - type: Ready
-                      status: "True"
       - target: crd-pods
-        timeout: 30
+        timeout: 60
         condition:
           and:
             - size: 3
@@ -44,7 +48,7 @@ steps:
       - dir: input
     wait:
       - target: crd-pods
-        timeout: 30
+        timeout: 60
         condition:
           and:
             - size: 1

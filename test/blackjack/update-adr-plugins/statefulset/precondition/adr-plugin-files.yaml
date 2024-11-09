@@ -1,0 +1,9 @@
+
+apiVersion: v1
+data:
+  plugin1.js: "console.assert(false, 'foo')"
+  plugin2.js: "console.assert(false, 'bar')"
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: adr-plugin-files

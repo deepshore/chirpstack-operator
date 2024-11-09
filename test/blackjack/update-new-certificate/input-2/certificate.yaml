@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cert-secret-3
+data:
+  key: YmFy
+  crt: bG9s

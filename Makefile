@@ -45,12 +45,12 @@ minikube:
 test:
 	sh test/script/setup.sh
 	which blackjack || cargo install mrblackjack
-	BLACKJACK_LOG_LEVEL=blackjack=info blackjack test/blackjack
+	BLACKJACK_LOG_LEVEL=blackjack=info blackjack --parallel 4 test/blackjack
 
 test-debug:
 	sh test/script/setup.sh
 	which blackjack || cargo install mrblackjack
-	BLACKJACK_LOG_LEVEL=blackjack=trace blackjack test/blackjack
+	BLACKJACK_LOG_LEVEL=blackjack=debug blackjack --parallel 4 test/blackjack
 
 clean:
 	rm -fr bundle*

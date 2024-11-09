@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cert-secret-1
+data:
+  key: Zm9v
+  crt: bG9s
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cert-secret-2
+data:
+  key: YmF6
+  crt: bG9s
