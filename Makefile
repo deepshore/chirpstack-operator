@@ -43,9 +43,13 @@ minikube:
 
 .PHONY: test
 test:
+	sh test/script/setup.sh
+	which blackjack || cargo install mrblackjack
 	BLACKJACK_LOG_LEVEL=blackjack=info blackjack test/blackjack
 
 test-debug:
+	sh test/script/setup.sh
+	which blackjack || cargo install mrblackjack
 	BLACKJACK_LOG_LEVEL=blackjack=trace blackjack test/blackjack
 
 clean:
