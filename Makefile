@@ -1,49 +1,41 @@
-CONTROLLER_IMAGE := chirpstack-controller:latest
+OPERATOR_IMAGE := chirpstack-operator:latest
 BUNDLE_IMAGE := chirpstack-operator-bundle:v0.1.0
+REGISTRY := ghcr.io/deepshore
 
-default: build manifest
+default: image bundle-image
 
 image:
-	docker buildx build --tag $(CONTROLLER_IMAGE) -f Dockerfile . &&
+	docker buildx build --tag $(REGISTRY)/$(OPERATOR_IMAGE) -f Dockerfile .
 
 config/crd/bases/applications.deepshore.de_chirpstacks.yaml: chirpstack-operator/src/crd.rs
 	cargo build
 	cargo run --bin make-crd-manifest | yq -o yaml -P > $@ || rm -f $@
 
-build:
-	cargo build
-
-run-controller: install
-	cargo build
-	RUST_LOG=debug cargo run --bin controller
-
-install: config/crd/bases/applications.deepshore.de_chirpstacks.yaml
-	kubectl apply -k config/crd
-
-uninstall:
-	kubectl delete -k config/crd
-
-deploy-sample:
-	kubectl apply -k test/sample
-
-undeploy-sample:
-	kubectl delete -k test/sample
-
-bundle:
+bundle: config/crd/bases/applications.deepshore.de_chirpstacks.yaml
+	cd config/manager && kustomize edit set image chirpstack-operator=${REGISTRY}/chirpstack-operator
 	operator-sdk generate kustomize manifests --package chirpstack-operator -q
 	kustomize build config/manifests | operator-sdk generate bundle -q --overwrite --version 0.1.0
 	operator-sdk bundle validate ./bundle
+	echo "LABEL org.opencontainers.image.source=https://github.com/deepshore/chirpstack-operator.git" >> bundle.Dockerfile
 
 bundle-image: bundle
-	docker buildx build --tag $(BUNDLE_IMAGE) -f bundle.Dockerfile . &&
+	docker buildx build --tag $(REGISTRY)/$(BUNDLE_IMAGE) -f bundle.Dockerfile .
 
-minikube:
-	minikube status 2>/dev/null 1>/dev/null || minikube start --addons=registry
-	kubectl apply -k test/dep
+push-images: image bundle-image
+	docker push $(REGISTRY)/$(OPERATOR_IMAGE)
+	docker push $(REGISTRY)/$(BUNDLE_IMAGE)
+
+deploy:
+	operator-sdk run bundle ${REGISTRY}/${BUNDLE_IMAGE} --namespace operators --timeout 5m0s
 
 .PHONY: test
 test:
 	sh test/script/setup.sh
+	which blackjack || cargo install mrblackjack
+	BLACKJACK_LOG_LEVEL=blackjack=info blackjack --parallel 4 test/blackjack
+
+test-from-ghcr:
+	sh test/script/setup-from-ghcr.sh
 	which blackjack || cargo install mrblackjack
 	BLACKJACK_LOG_LEVEL=blackjack=info blackjack --parallel 4 test/blackjack
 

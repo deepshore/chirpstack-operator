@@ -12,6 +12,7 @@ RUN cargo fetch
 RUN cargo build --release --bin controller --package chirpstack-operator
 
 FROM debian:bookworm-slim
+LABEL org.opencontainers.image.source=https://github.com/deepshore/chirpstack-operator.git
 
 RUN useradd --create-home --uid 1001 user
 USER 1001

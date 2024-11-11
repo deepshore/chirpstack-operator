@@ -1,6 +1,6 @@
 #!/bin/sh
 
-CONTROLLER_IMAGE=chirpstack-controller:latest
+OPERATOR_IMAGE=chirpstack-operator:latest
 BUNDLE_IMAGE=chirpstack-operator-bundle:v0.1.0
 DOCKER_REGISTRY_PORT=5000
 DOCKER_REGISTRY_HOST=localhost
@@ -32,15 +32,15 @@ operator_running ||
   } &&
   {
     REGISTRY_IP=$(kubectl -n kube-system get service registry -o jsonpath='{.spec.clusterIP}') &&
-    cd config/manager && kustomize edit set image chirpstack-controller=${REGISTRY_IP}/chirpstack-controller && cd ../.. &&
+    cd config/manager && kustomize edit set image chirpstack-operator=${REGISTRY_IP}/chirpstack-operator && cd ../.. &&
     rm -fr bundle* &&
     kustomize build config/manifests | operator-sdk generate bundle -q --overwrite --version 0.1.0 &&
     operator-sdk bundle validate ./bundle &&
     {
       kubectl port-forward --namespace kube-system service/registry ${DOCKER_REGISTRY_PORT}:80 > /dev/null &
       PID="$!"
-      docker buildx build --tag ${DOCKER_REGISTRY}/${CONTROLLER_IMAGE} -f Dockerfile . &&
-      docker push ${DOCKER_REGISTRY}/${CONTROLLER_IMAGE} &&
+      docker buildx build --tag ${DOCKER_REGISTRY}/${OPERATOR_IMAGE} -f Dockerfile . &&
+      docker push ${DOCKER_REGISTRY}/${OPERATOR_IMAGE} &&
       docker buildx build --tag ${DOCKER_REGISTRY}/${BUNDLE_IMAGE} -f bundle.Dockerfile . &&
       docker push ${DOCKER_REGISTRY}/${BUNDLE_IMAGE} &&
       {
