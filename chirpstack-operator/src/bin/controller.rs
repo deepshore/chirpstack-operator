@@ -5,8 +5,8 @@ use chirpstack_operator::{
     status::{StatusHandler, StatusHandlerStatus},
 };
 use droperator::{
-    error::{Error, ReconcilerError},
     config_index::ConfigIndex,
+    error::{Error, ReconcilerError},
     resource_lock::ResourceLock,
 };
 use env_logger;
@@ -152,7 +152,9 @@ async fn reconcile(
                 chirpstack.clone(),
                 |event| async {
                     let result = match event {
-                        Event::Apply(chirpstack) => apply(context.clone(), chirpstack, &status).await,
+                        Event::Apply(chirpstack) => {
+                            apply(context.clone(), chirpstack, &status).await
+                        }
                         Event::Cleanup(chirpstack) => cleanup(context.clone(), chirpstack).await,
                     };
                     match result {
@@ -169,11 +171,11 @@ async fn reconcile(
             )
             .await
             .map_err(ReconcilerError::from)
-        },
+        }
         StatusHandlerStatus::HasError => {
             log::info!("is in error state but not yet ready for the next attempt, requeueing...");
             Ok(Action::requeue(status.error_timeout.clone()))
-        },
+        }
         StatusHandlerStatus::Clean => {
             log::info!("no action needed, requeueing...");
             Ok(Action::requeue(Duration::from_secs(300)))

@@ -55,10 +55,10 @@ pub mod spec {
             }
 
             fn default_image() -> Image {
-                Image{
+                Image {
                     registry: "docker.io".to_string(),
                     repository: "chirpstack/chirpstack".to_string(),
-                    tag: "4".to_string()
+                    tag: "4".to_string(),
                 }
             }
         }
@@ -87,7 +87,7 @@ pub mod spec {
 
             impl Default for Service {
                 fn default() -> Service {
-                    Service{
+                    Service {
                         service_type: ServiceType::default(),
                         port: 8080,
                         node_port: None,
@@ -149,11 +149,11 @@ pub mod spec {
 
             impl Default for Workload {
                 fn default() -> Workload {
-                    Workload{
-                        image: Image{
+                    Workload {
+                        image: Image {
                             registry: "docker.io".to_string(),
                             repository: "chirpstack/chirpstack-rest-api".to_string(),
-                            tag: "4".to_string()
+                            tag: "4".to_string(),
                         },
                         replicas: 1,
                     }
@@ -205,7 +205,7 @@ pub mod status {
 
     impl Default for Bookkeeping {
         fn default() -> Self {
-            Bookkeeping{
+            Bookkeeping {
                 last_reconciliation_attempt: SystemTime::UNIX_EPOCH.clone(),
                 last_observed_generation: None,
                 last_observed_workload_type: None,
@@ -314,8 +314,7 @@ impl Config for Chirpstack {
     fn get_config_map_names(&self) -> Vec<String> {
         let mut names = Vec::<String>::new();
         names.push(
-            self
-                .spec
+            self.spec
                 .server
                 .configuration
                 .config_files
@@ -339,8 +338,7 @@ impl Config for Chirpstack {
             .map(|name| name.clone())
             .collect();
         names.extend(
-            self
-                .spec
+            self.spec
                 .server
                 .configuration
                 .certificates

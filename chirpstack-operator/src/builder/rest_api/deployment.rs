@@ -1,8 +1,8 @@
+use crate::builder::meta_data::MetaData;
+use crate::crd::spec::Chirpstack;
 use k8s_openapi::api::apps::v1::{Deployment, DeploymentSpec};
 use k8s_openapi::api::core::v1::{Container, ContainerPort, PodSpec, PodTemplateSpec};
-use k8s_openapi::apimachinery::pkg::apis::meta::v1::{ObjectMeta};
-use crate::builder::meta_data::MetaData;
-use crate::crd::{spec::Chirpstack};
+use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 
 pub fn build(chirpstack: &Chirpstack) -> Deployment {
     let meta_data = MetaData::new_rest_api(chirpstack);
@@ -14,9 +14,7 @@ pub fn build(chirpstack: &Chirpstack) -> Deployment {
     // Construct the container image
     let image = format!(
         "{}/{}:{}",
-        workload.image.registry,
-        workload.image.repository,
-        workload.image.tag
+        workload.image.registry, workload.image.repository, workload.image.tag
     );
 
     // Build container args
@@ -24,7 +22,8 @@ pub fn build(chirpstack: &Chirpstack) -> Deployment {
         "--server".to_string(),
         format!(
             "{}:{}",
-            meta_data.app_name.clone(), chirpstack.spec.server.service.port
+            meta_data.app_name.clone(),
+            chirpstack.spec.server.service.port
         ),
         "--bind".to_string(),
         "0.0.0.0:8080".to_string(),
@@ -36,12 +35,10 @@ pub fn build(chirpstack: &Chirpstack) -> Deployment {
     }
 
     // Define container ports
-    let ports = vec![
-        ContainerPort {
-            container_port: 8080,
-            ..Default::default()
-        },
-    ];
+    let ports = vec![ContainerPort {
+        container_port: 8080,
+        ..Default::default()
+    }];
 
     // Build the container
     let container = Container {

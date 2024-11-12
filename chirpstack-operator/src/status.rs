@@ -155,7 +155,11 @@ impl StatusHandler {
                 last_reconciliation_attempt: self.this_reconciliation_attempt,
                 last_observed_generation: self.chirpstack.metadata.generation,
                 last_observed_config_hash: Some(self.hash.clone()),
-                last_observed_workload_type: self.chirpstack.status.as_ref().and_then(|status| status.bookkeeping.last_observed_workload_type.clone()),
+                last_observed_workload_type: self
+                    .chirpstack
+                    .status
+                    .as_ref()
+                    .and_then(|status| status.bookkeeping.last_observed_workload_type.clone()),
             },
         })
         .await
@@ -185,7 +189,11 @@ impl StatusHandler {
                 last_reconciliation_attempt: self.this_reconciliation_attempt,
                 last_observed_generation: self.chirpstack.metadata.generation,
                 last_observed_config_hash: Some(self.hash.clone()),
-                last_observed_workload_type: self.chirpstack.status.as_ref().and_then(|status| status.bookkeeping.last_observed_workload_type.clone()),
+                last_observed_workload_type: self
+                    .chirpstack
+                    .status
+                    .as_ref()
+                    .and_then(|status| status.bookkeeping.last_observed_workload_type.clone()),
             },
         })
         .await

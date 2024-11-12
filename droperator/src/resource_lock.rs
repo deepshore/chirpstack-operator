@@ -1,9 +1,9 @@
 use crate::error::Error;
-use std::collections::HashMap;
 use kube::{
     core::{NamespaceResourceScope, Resource},
     ResourceExt,
 };
+use std::collections::HashMap;
 use std::fmt::Debug;
 use std::sync::Arc;
 use tokio::sync::{Mutex, OwnedMutexGuard};

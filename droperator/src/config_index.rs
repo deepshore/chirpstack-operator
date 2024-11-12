@@ -4,9 +4,9 @@ use futures::future::join_all;
 use k8s_openapi::api::core::v1::{ConfigMap, Secret};
 use k8s_openapi::Resource as KubeResource;
 use kube::{
+    api::ObjectMeta,
     core::{NamespaceResourceScope, Resource},
-    api::{ObjectMeta},
-    runtime::reflector::{ObjectRef},
+    runtime::reflector::ObjectRef,
     Api, Client, ResourceExt,
 };
 use serde::{de::DeserializeOwned, Serialize};
@@ -21,12 +21,7 @@ pub trait Config {
 #[derive(Clone, Debug)]
 pub struct ConfigIndex<R>
 where
-    R:
-        Clone +
-        Config +
-        Debug +
-        Resource<Scope = NamespaceResourceScope> +
-        ResourceExt,
+    R: Clone + Config + Debug + Resource<Scope = NamespaceResourceScope> + ResourceExt,
     R::DynamicType: Default + Debug + Clone + Hash + Eq,
 {
     index: DashMap<ObjectKey, HashSet<ObjectRef<R>>>,
@@ -41,12 +36,7 @@ struct ObjectKey {
 
 impl<R> ConfigIndex<R>
 where
-    R:
-        Clone +
-        Config +
-        Debug +
-        Resource<Scope = NamespaceResourceScope> +
-        ResourceExt,
+    R: Clone + Config + Debug + Resource<Scope = NamespaceResourceScope> + ResourceExt,
     R::DynamicType: Default + Debug + Clone + Hash + Eq,
 {
     pub fn new() -> Self {
@@ -124,7 +114,6 @@ where
             None => Vec::<ObjectRef<R>>::new(),
         }
     }
-
 }
 
 pub async fn determine_hash<R>(resource: &R, client: &Client) -> String
@@ -190,7 +179,7 @@ where
                         Ok(json) => Ok(json),
                         Err(e) => Err(format!("{e:?}")),
                     }
-                },
+                }
                 Err(e) => Err(format!("{e:?}")),
             };
             match result {
