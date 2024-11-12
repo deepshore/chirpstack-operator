@@ -1,9 +1,9 @@
-use crate::builder::meta_data::MetaData;
 use crate::crd::{spec::Chirpstack, types::ServiceType};
 use k8s_openapi::api::core::v1::{Service, ServicePort, ServiceSpec};
+use droperator::metadata::MakeMetadata;
 
 pub fn build(chirpstack: &Chirpstack) -> Service {
-    let meta_data = MetaData::from(chirpstack);
+    let metadata = chirpstack.make_metadata(None);
 
     // Build service ports
     let mut ports = vec![ServicePort {
@@ -26,13 +26,13 @@ pub fn build(chirpstack: &Chirpstack) -> Service {
     let spec = ServiceSpec {
         type_: Some(chirpstack.spec.server.service.service_type.to_string()),
         ports: Some(ports),
-        selector: Some(meta_data.labels.clone()),
+        selector: Some(metadata.labels.clone()),
         ..Default::default()
     };
 
     // Build the Service
     Service {
-        metadata: meta_data.object_meta.clone(),
+        metadata: metadata.object_meta.clone(),
         spec: Some(spec),
         ..Default::default()
     }

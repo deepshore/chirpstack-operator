@@ -2,7 +2,11 @@ OPERATOR_IMAGE := chirpstack-operator:latest
 BUNDLE_IMAGE := chirpstack-operator-bundle:v0.1.0
 REGISTRY := ghcr.io/deepshore
 
-default: image bundle-image
+default: build
+
+build:
+	cargo build
+	cargo test
 
 image:
 	docker buildx build --tag $(REGISTRY)/$(OPERATOR_IMAGE) -f Dockerfile .
@@ -26,7 +30,7 @@ push-images: image bundle-image
 	docker push $(REGISTRY)/$(BUNDLE_IMAGE)
 
 deploy:
-	operator-sdk run bundle ${REGISTRY}/${BUNDLE_IMAGE} --namespace operators --timeout 5m0s
+	operator-sdk run bundle $(REGISTRY)/$(BUNDLE_IMAGE) --namespace operators --timeout 5m0s
 
 test-with-local-controller: config/crd/bases/applications.deepshore.de_chirpstacks.yaml
 	cargo build --bin controller
@@ -39,12 +43,12 @@ test-with-local-controller: config/crd/bases/applications.deepshore.de_chirpstac
 test-with-olm-local-registry:
 	sh test/script/setup-with-olm-local-registry.sh
 	which blackjack || cargo install mrblackjack
-	BLACKJACK_LOG_LEVEL=blackjack=info blackjack --parallel 4 test/blackjack
+	BLACKJACK_LOG_LEVEL=blackjack=info blackjack --parallel $(MINIKUBE_CPUS) --timeout-scaling 2 test/blackjack
 
 test-with-olm-ghcr:
 	sh test/script/setup-with-olm-ghcr.sh
 	which blackjack || cargo install mrblackjack
-	BLACKJACK_LOG_LEVEL=blackjack=info blackjack --parallel 4 test/blackjack
+	BLACKJACK_LOG_LEVEL=blackjack=info blackjack --parallel $(MINIKUBE_CPUS) --timeout-scaling 2 test/blackjack
 
 clean:
 	rm -fr bundle*

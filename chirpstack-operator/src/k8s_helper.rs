@@ -1,4 +1,5 @@
-use crate::{builder::meta_data::MetaData, crd::Chirpstack};
+use crate::{crd::Chirpstack};
+use droperator::metadata::MakeMetadata;
 use droperator::error::Error;
 use kube::{
     api::{DeleteParams, ListParams, Patch, PatchParams, PostParams},
@@ -110,13 +111,9 @@ where
         + k8s_openapi::Resource,
     T::DynamicType: Default,
 {
-    let meta_data = MetaData::from(chirpstack);
-    let namespace = meta_data
-        .object_meta
-        .namespace
-        .unwrap_or("default".to_string());
-    let resources: Api<T> = Api::namespaced(client.clone(), &namespace);
-    let lp = ListParams::default().labels(&format!("app={0}", &meta_data.app_name));
+    let metadata = chirpstack.make_metadata(None);
+    let resources: Api<T> = Api::namespaced(client.clone(), &metadata.namespace);
+    let lp = ListParams::default().labels(&format!("app={0}", &metadata.app_name));
     for r in resources.list(&lp).await? {
         delete_resource(client, &r).await?;
     }

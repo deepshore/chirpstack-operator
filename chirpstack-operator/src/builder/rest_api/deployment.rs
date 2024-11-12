@@ -1,11 +1,11 @@
-use crate::builder::meta_data::MetaData;
+use droperator::metadata::MakeMetadata;
 use crate::crd::spec::Chirpstack;
 use k8s_openapi::api::apps::v1::{Deployment, DeploymentSpec};
 use k8s_openapi::api::core::v1::{Container, ContainerPort, PodSpec, PodTemplateSpec};
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 
 pub fn build(chirpstack: &Chirpstack) -> Deployment {
-    let meta_data = MetaData::new_rest_api(chirpstack);
+    let metadata = chirpstack.make_metadata(Some("rest-api".to_string()));
 
     // Get workload and configuration
     let workload = &chirpstack.spec.rest_api.workload;
@@ -22,7 +22,7 @@ pub fn build(chirpstack: &Chirpstack) -> Deployment {
         "--server".to_string(),
         format!(
             "{}:{}",
-            meta_data.app_name.clone(),
+            metadata.app_name.clone(),
             chirpstack.spec.server.service.port
         ),
         "--bind".to_string(),
@@ -58,7 +58,7 @@ pub fn build(chirpstack: &Chirpstack) -> Deployment {
     // Build the PodTemplateSpec
     let pod_template_spec = PodTemplateSpec {
         metadata: Some(ObjectMeta {
-            labels: Some(meta_data.labels.clone()),
+            labels: Some(metadata.labels.clone()),
             ..Default::default()
         }),
         spec: Some(pod_spec),
@@ -67,14 +67,14 @@ pub fn build(chirpstack: &Chirpstack) -> Deployment {
     // Build the DeploymentSpec
     let deployment_spec = DeploymentSpec {
         replicas: Some(workload.replicas),
-        selector: meta_data.label_selector.clone(),
+        selector: metadata.label_selector.clone(),
         template: pod_template_spec,
         ..Default::default()
     };
 
     // Build the Deployment
     Deployment {
-        metadata: meta_data.object_meta.clone(),
+        metadata: metadata.object_meta.clone(),
         spec: Some(deployment_spec),
         ..Default::default()
     }

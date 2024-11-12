@@ -1,6 +1,6 @@
-use crate::builder::meta_data::MetaData;
 use crate::crd::types::WorkloadType;
 use crate::crd::Chirpstack;
+use droperator::metadata::MakeMetadata;
 use k8s_openapi::api::apps::v1::{Deployment, DeploymentSpec};
 use k8s_openapi::api::core::v1::{
     ConfigMapVolumeSource, Container, ContainerPort, EnvFromSource, EnvVar, PodSpec,
@@ -12,10 +12,10 @@ use std::collections::BTreeMap;
 pub fn build(chirpstack: &Chirpstack, dependent_hash: String) -> Deployment {
     assert!(chirpstack.spec.server.workload.workload_type == WorkloadType::Deployment);
 
-    let meta_data = MetaData::from(chirpstack);
+    let metadata = chirpstack.make_metadata(None);
 
     // Build pod labels
-    let mut pod_labels = meta_data.labels.clone();
+    let mut pod_labels = metadata.labels.clone();
     if !chirpstack.spec.server.workload.pod_labels.is_empty() {
         for label in &chirpstack.spec.server.workload.pod_labels {
             pod_labels.insert(label.key.clone(), label.value.clone());
@@ -189,14 +189,14 @@ pub fn build(chirpstack: &Chirpstack, dependent_hash: String) -> Deployment {
     // Build the DeploymentSpec
     let deployment_spec = DeploymentSpec {
         replicas: Some(chirpstack.spec.server.workload.replicas),
-        selector: meta_data.label_selector.clone(),
+        selector: metadata.label_selector.clone(),
         template: pod_template_spec,
         ..Default::default()
     };
 
     // Assemble the Deployment
     Deployment {
-        metadata: meta_data.object_meta.clone(),
+        metadata: metadata.object_meta.clone(),
         spec: Some(deployment_spec),
         ..Default::default()
     }

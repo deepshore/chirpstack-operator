@@ -1,4 +1,3 @@
-use crate::builder::meta_data::MetaData;
 use crate::crd::spec::Chirpstack;
 use crate::crd::types::WorkloadType;
 use k8s_openapi::api::apps::v1::{StatefulSet, StatefulSetSpec};
@@ -8,14 +7,15 @@ use k8s_openapi::api::core::v1::{
 };
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use std::collections::BTreeMap;
+use droperator::metadata::MakeMetadata;
 
 pub fn build(chirpstack: &Chirpstack, dependent_hash: String) -> StatefulSet {
     assert!(chirpstack.spec.server.workload.workload_type == WorkloadType::StatefulSet);
 
-    let meta_data = MetaData::from(chirpstack);
+    let metadata = chirpstack.make_metadata(None);
 
     // Build pod labels
-    let mut pod_labels = meta_data.labels.clone();
+    let mut pod_labels = metadata.labels.clone();
     if !chirpstack.spec.server.workload.pod_labels.is_empty() {
         for label in &chirpstack.spec.server.workload.pod_labels {
             pod_labels.insert(label.key.clone(), label.value.clone());
@@ -189,15 +189,15 @@ pub fn build(chirpstack: &Chirpstack, dependent_hash: String) -> StatefulSet {
     // Build the StatefulSetSpec
     let statefulset_spec = StatefulSetSpec {
         replicas: Some(chirpstack.spec.server.workload.replicas),
-        selector: meta_data.label_selector.clone(),
-        service_name: meta_data.app_name.clone(),
+        selector: metadata.label_selector.clone(),
+        service_name: metadata.app_name.clone(),
         template: pod_template_spec,
         ..Default::default()
     };
 
     // Assemble the StatefulSet
     StatefulSet {
-        metadata: meta_data.object_meta.clone(),
+        metadata: metadata.object_meta.clone(),
         spec: Some(statefulset_spec),
         ..Default::default()
     }
