@@ -1,6 +1,5 @@
 use base64::{engine::general_purpose, Engine as _};
 use dashmap::DashMap;
-use futures::future::join_all;
 use k8s_openapi::api::core::v1::{ConfigMap, Secret};
 use k8s_openapi::Resource as KubeResource;
 use kube::{
@@ -65,12 +64,9 @@ where
             name: name.clone(),
         }));
 
+        self.remove(resource);
+
         let resource_ref = ObjectRef::from_obj(resource);
-
-        self.index.iter_mut().for_each(|mut entry| {
-            entry.value_mut().remove(&resource_ref);
-        });
-
         for key in keys {
             self.index
                 .entry(key)
@@ -82,9 +78,9 @@ where
     pub fn remove(&self, resource: &R) {
         let resource_ref = ObjectRef::from_obj(resource);
 
-        self.index.iter_mut().for_each(|mut entry| {
+        for mut entry in self.index.iter_mut() {
             entry.value_mut().remove(&resource_ref);
-        });
+        }
     }
 
     pub fn get_affected<T>(&self, resource: &T) -> Vec<ObjectRef<R>>
@@ -134,27 +130,24 @@ where
     let config_map_names = resource.get_config_map_names();
     let secret_names = resource.get_secret_names();
 
-    let to_hash: Vec<String> =
-        serialize_resources::<ConfigMap>(config_map_names, &namespace, client.clone())
-            .await
-            .into_iter()
-            .chain(
-                serialize_resources::<Secret>(secret_names, &namespace, client.clone())
-                    .await
-                    .into_iter(),
-            )
-            .collect();
+    let mut to_hash = vec![];
+    to_hash.append(
+        &mut serialize_resources::<ConfigMap>(&config_map_names, &namespace, client.clone()).await,
+    );
+    to_hash.append(
+        &mut serialize_resources::<Secret>(&secret_names, &namespace, client.clone()).await,
+    );
 
     let mut hasher = Sha256::new();
-    to_hash.into_iter().for_each(|s| {
+    for s in to_hash {
         hasher.update(s);
-    });
-    let hash = general_purpose::STANDARD.encode(&hasher.finalize());
-    hash
+    }
+
+    general_purpose::STANDARD.encode(&hasher.finalize())
 }
 
 async fn serialize_resources<R>(
-    names: Vec<String>,
+    names: &Vec<String>,
     namespace: &String,
     client: Client,
 ) -> Vec<String>
@@ -168,28 +161,27 @@ where
         + k8s_openapi::Resource,
     R::DynamicType: Default,
 {
-    join_all(names.into_iter().map(|name| {
+    let mut results = vec![];
+    for name in names {
         let api: Api<R> = Api::namespaced(client.clone(), namespace);
-        async move {
-            let result = match api.get(&name).await {
-                Ok(resource) => {
-                    let mut normalized_resource = resource.clone();
-                    *(normalized_resource.meta_mut()) = ObjectMeta::default();
-                    match serde_json::to_string(&normalized_resource) {
-                        Ok(json) => Ok(json),
-                        Err(e) => Err(format!("{e:?}")),
-                    }
-                }
-                Err(e) => Err(format!("{e:?}")),
-            };
-            match result {
-                Ok(o) => o,
-                Err(e) => {
-                    log::warn!("Unable to get {:?} {:?}: {:?}", R::KIND, name, e);
-                    "".to_string()
+        let result = match api.get(name).await {
+            Ok(resource) => {
+                let mut normalized_resource = resource.clone();
+                *(normalized_resource.meta_mut()) = ObjectMeta::default();
+                match serde_json::to_string(&normalized_resource) {
+                    Ok(json) => Ok(json),
+                    Err(e) => Err(format!("{e:?}")),
                 }
             }
-        }
-    }))
-    .await
+            Err(e) => Err(format!("{e:?}")),
+        };
+        results.push(match result {
+            Ok(o) => o,
+            Err(e) => {
+                log::warn!("Unable to get {:?} {:?}: {:?}", R::KIND, name, e);
+                "".to_string()
+            }
+        });
+    }
+    results
 }
