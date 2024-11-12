@@ -98,6 +98,19 @@ async fn apply(
         )
         .await?;
     }
+    if chirpstack.spec.server.configuration.monitoring.is_some() {
+        apply_resource(
+            &client,
+            &builder::server::monitoring_service::build(chirpstack.as_ref()),
+        )
+        .await?;
+    } else {
+        delete_resource(
+            &client,
+            &builder::server::monitoring_service::build(chirpstack.as_ref()),
+        )
+        .await?;
+    }
     Ok(Action::requeue(Duration::from_secs(300)))
 }
 

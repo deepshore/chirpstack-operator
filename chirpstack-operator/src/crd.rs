@@ -110,6 +110,7 @@ pub mod spec {
                 pub adr_plugin_files: Option<ConfigMapName>,
                 #[serde(default)]
                 pub certificates: Vec<Certificate>,
+                #[serde(skip_serializing_if = "Option::is_none", default)]
                 pub monitoring: Option<Monitoring>,
             }
         }
@@ -238,6 +239,7 @@ pub mod types {
     use schemars::JsonSchema;
     use serde::{Deserialize, Serialize};
     use std::fmt;
+    use k8s_openapi::apimachinery::pkg::util::intstr::IntOrString;
 
     #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema, PartialEq)]
     #[serde(rename_all = "lowercase")]
@@ -302,11 +304,11 @@ pub mod types {
         pub secret_name: String,
     }
 
-    #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema, PartialEq, Eq, Hash)]
+    #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema, PartialEq, Eq)]
     #[serde(rename_all = "camelCase")]
     pub struct Monitoring {
-        pub port: String,
-        pub target_port: String,
+        pub port: i32,
+        pub target_port: IntOrString,
     }
 }
 
