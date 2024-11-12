@@ -28,6 +28,13 @@ push-images: image bundle-image
 deploy:
 	operator-sdk run bundle ${REGISTRY}/${BUNDLE_IMAGE} --namespace operators --timeout 5m0s
 
+test-local: config/crd/bases/applications.deepshore.de_chirpstacks.yaml
+	cargo build --bin controller
+	which blackjack || cargo install mrblackjack
+	sh test/script/setup-for-local.sh
+	kubectl apply -k config/crd
+	sh test/script/run-test-local.sh
+
 .PHONY: test
 test:
 	sh test/script/setup.sh

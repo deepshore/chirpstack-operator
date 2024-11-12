@@ -1,5 +1,5 @@
 use crate::error::Error;
-use dashmap::DashMap;
+use std::collections::HashMap;
 use kube::{
     core::{NamespaceResourceScope, Resource},
     ResourceExt,
@@ -9,13 +9,13 @@ use std::sync::Arc;
 use tokio::sync::{Mutex, OwnedMutexGuard};
 
 pub struct ResourceLock {
-    locks: DashMap<String, Arc<Mutex<()>>>,
+    locks: Mutex<HashMap<String, Arc<Mutex<()>>>>,
 }
 
 impl ResourceLock {
     pub fn new() -> Self {
         ResourceLock {
-            locks: DashMap::new(),
+            locks: Mutex::new(HashMap::new()),
         }
     }
 
@@ -23,17 +23,17 @@ impl ResourceLock {
     where
         R: Clone + Debug + Resource<Scope = NamespaceResourceScope> + ResourceExt,
     {
+        let mut unlocked = self.locks.lock().await;
         let key = resource.uid().ok_or(Error::MissingField(format!(
             "{:?}: {}",
             resource,
             "uid".to_string()
         )))?;
         let mutex = {
-            let entry = self
-                .locks
+            let entry = unlocked
                 .entry(key)
                 .or_insert_with(|| Arc::new(Mutex::new(())));
-            Arc::clone(entry.value())
+            Arc::clone(entry)
         };
         Ok(mutex.lock_owned().await)
     }
