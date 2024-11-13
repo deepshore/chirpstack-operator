@@ -8,6 +8,7 @@ use kube::{
 };
 use serde::{de::DeserializeOwned, Serialize};
 use std::fmt::Debug;
+use metrics::{counter};
 
 const CONTROLLER_NAME: &str = "chirpstack-controller";
 
@@ -63,6 +64,8 @@ where
         + k8s_openapi::Resource,
     K::DynamicType: Default,
 {
+    counter!("kube_resource_created_total").increment(1);
+
     let pp = PatchParams::apply(CONTROLLER_NAME);
     let data = serde_json::to_value(resource)?;
     let patch = Patch::Apply(data);

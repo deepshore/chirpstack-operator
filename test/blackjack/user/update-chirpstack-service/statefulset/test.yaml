@@ -1,0 +1,87 @@
+steps:
+  - name: dep
+    watch:
+      - name: pre-pods
+        group: ''
+        version: v1
+        kind: Pod
+    apply:
+      - path: dep
+    wait:
+      - target: pre-pods
+        timeout: 60
+        condition:
+          and:
+            - size: 3
+            - all:
+                status:
+                  conditions:
+                    - type: Ready
+                      status: "True"
+  - name: precondition
+    watch:
+      - name: crd-pods
+        group: ''
+        version: v1
+        kind: Pod
+        labels:
+          app: chirpstack-test
+      - name: crd-service
+        group: ''
+        version: v1
+        kind: Service
+        labels:
+          app: chirpstack-test
+    apply:
+      - path: precondition
+    wait:
+      - target: crd-pods
+        timeout: 60
+        condition:
+          and:
+            - size: 3
+            - all:
+                status:
+                  conditions:
+                    - type: Ready
+                      status: "True"
+            - all:
+                metadata:
+                  ownerReferences:
+                    - kind: StatefulSet
+      - target: crd-service
+        timeout: 60
+        condition:
+          and:
+            - size: 1
+            - all:
+                spec:
+                  ports:
+                    - port: 8080
+  - name: input
+    apply:
+      - path: input
+    wait:
+      - target: crd-pods
+        timeout: 60
+        condition:
+          and:
+            - size: 1
+            - all:
+                status:
+                  conditions:
+                    - type: Ready
+                      status: "True"
+            - all:
+                metadata:
+                  ownerReferences:
+                    - kind: StatefulSet
+      - target: crd-service
+        timeout: 60
+        condition:
+          and:
+            - size: 1
+            - all:
+                spec:
+                  ports:
+                    - port: 9090

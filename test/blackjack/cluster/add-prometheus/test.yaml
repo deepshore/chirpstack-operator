@@ -1,0 +1,37 @@
+type: cluster
+ordering: 02
+steps:
+  - name: install prometheus operator
+    watch:
+      - name: prometheus-operator-installplan
+        group: operators.coreos.com
+        version: v1alpha1
+        kind: InstallPlan
+        namespace: operators
+        labels:
+          operators.coreos.com/prometheus.operators: ""
+    apply:
+      - path: prometheus-operator.yaml
+        override-namespace: false
+    wait:
+      - target: prometheus-operator-installplan
+        timeout: 60
+        condition:
+          size: 1
+  - name: approve installation
+    script:
+      - ./approve-prometheus.sh
+  - name: check for service monitor
+    watch:
+      - name: service-monitor
+        group: monitoring.coreos.com
+        version: v1
+        kind: ServiceMonitor
+        namespace: operators
+        labels:
+          app.kubernetes.io/created-by: chirpstack-operator
+    wait:
+      - target: service-monitor
+        timeout: 240
+        condition:
+          size: 1

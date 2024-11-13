@@ -3,6 +3,7 @@ use chirpstack_operator::{
     crd::{types::WorkloadType, Chirpstack},
     k8s_helper::{apply_resource, delete_resource, find_and_delete},
     status::{StatusHandler, StatusHandlerStatus},
+    prometheus::create_prometheus_watcher,
 };
 use droperator::{
     config_index::ConfigIndex,
@@ -21,6 +22,9 @@ use kube::{
     },
     Api, Client, ResourceExt,
 };
+use metrics::{counter, histogram};
+use metrics_exporter_prometheus::PrometheusBuilder;
+use std::time::Instant;
 use std::{sync::Arc, time::Duration};
 
 async fn apply(
@@ -121,10 +125,35 @@ async fn cleanup(context: Arc<Context>, chirpstack: Arc<Chirpstack>) -> Result<A
     Ok(Action::await_change())
 }
 
+struct ReconcileLoopMetrics {
+    start_time: Instant,
+}
+
+impl ReconcileLoopMetrics {
+    fn start() -> Self {
+        counter!("operator_reconcile_total").increment(1);
+        ReconcileLoopMetrics {
+            start_time: Instant::now(),
+        }
+    }
+
+    fn action(&self) {
+        counter!("operator_reconcile_action_total").increment(1);
+    }
+
+    fn stop(self, metric: &'static str) {
+        let duration = self.start_time.elapsed().as_secs_f64();
+        counter!(metric).increment(1);
+        histogram!("operator_reconcile_duration_seconds").record(duration);
+    }
+}
+
 async fn reconcile(
     chirpstack_trigger: Arc<Chirpstack>,
     context: Arc<Context>,
 ) -> Result<Action, ReconcilerError> {
+    let metrics = ReconcileLoopMetrics::start();
+
     log::debug!(
         "locking reconciliation for {:?}",
         chirpstack_trigger.name_any()
@@ -158,6 +187,7 @@ async fn reconcile(
     .await;
     match status.status() {
         StatusHandlerStatus::NeedsReconciliation => {
+            metrics.action();
             let _ = status.start_reconciliation();
             finalizer(
                 &api,
@@ -172,10 +202,14 @@ async fn reconcile(
                     };
                     match result {
                         Ok(action) => {
+                            metrics.stop("operator_reconcile_success_total");
+
                             let _ = status.done_without_errors().await;
                             Ok(action)
                         }
                         Err(e) => {
+                            metrics.stop("operator_reconcile_errors_total");
+
                             let _ = status.done_with_errors(vec![format!("{e:?}")]).await;
                             Err(e)
                         }
@@ -186,10 +220,14 @@ async fn reconcile(
             .map_err(ReconcilerError::from)
         }
         StatusHandlerStatus::HasError => {
+            metrics.stop("operator_reconcile_throttle_error_total");
+
             log::info!("is in error state but not yet ready for the next attempt, requeueing...");
             Ok(Action::requeue(status.error_timeout.clone()))
         }
         StatusHandlerStatus::Clean => {
+            metrics.stop("operator_reconcile_no_action_total");
+
             log::info!("no action needed, requeueing...");
             Ok(Action::requeue(Duration::from_secs(300)))
         }
@@ -211,7 +249,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
     log::info!("starting...");
 
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .expect("Failed to install rustls crypto provider");
+
+    PrometheusBuilder::new()
+        .with_http_listener(([127, 0, 0, 1], 8383))
+        .set_buckets(&[0.1, 0.5, 1.0, 3.0])?
+        .install()?;
+
     let client = Client::try_default().await?;
+
+    create_prometheus_watcher(client.clone());
+
     let chirpstack_api: Api<Chirpstack> = Api::all(client.clone());
     let cm_api = Api::<ConfigMap>::all(client.clone());
     let secret_api = Api::<Secret>::all(client.clone());

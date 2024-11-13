@@ -1,0 +1,45 @@
+steps:
+  - name: dep
+    watch:
+      - name: dep-pods
+        group: ''
+        version: v1
+        kind: Pod
+    apply:
+      - path: dep
+    wait:
+      - target: dep-pods
+        timeout: 60
+        condition:
+          and:
+            - size: 3
+            - all:
+                status:
+                  conditions:
+                    - type: Ready
+                      status: "True"
+  - name: input
+    watch:
+      - name: crd-pods
+        group: ''
+        version: v1
+        kind: Pod
+        labels:
+          app: chirpstack-test
+    apply:
+      - path: input
+    wait:
+      - target: crd-pods
+        timeout: 60
+        condition:
+          and:
+            - size: 3
+            - all:
+                status:
+                  conditions:
+                    - type: Ready
+                      status: "True"
+            - all:
+                metadata:
+                  ownerReferences:
+                    - kind: StatefulSet

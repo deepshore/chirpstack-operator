@@ -20,5 +20,5 @@ USER 1001
 WORKDIR /home/user
 COPY --from=builder /app/target/release/controller .
 
-ENV RUST_LOG=INFO
+ENV RUST_LOG=info
 ENTRYPOINT ["./controller"]

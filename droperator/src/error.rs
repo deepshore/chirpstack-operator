@@ -8,6 +8,12 @@ pub enum Error {
     #[error("Serialization error: {0}")]
     SerializationError(#[from] serde_json::Error),
 
+    #[error("YAML error: {0}")]
+    YamlError(#[from] serde_yaml::Error),
+
+    #[error("ParseGroupVersionError: {0}")]
+    ParseGroupVersionError(#[from] kube::core::gvk::ParseGroupVersionError),
+
     #[error("Missing field: {0}")]
     MissingField(String),
 

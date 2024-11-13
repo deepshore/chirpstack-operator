@@ -1,0 +1,31 @@
+type: cluster
+ordering: 01
+steps:
+  - name: install olm
+    script:
+      - ./install-with-olm-local-registry.sh
+  - name: check for operator
+    watch:
+      - name: operator
+        group: ''
+        version: v1
+        kind: Pod
+        namespace: operators
+        labels:
+          control-plane: controller-manager
+    wait:
+      - target: operator
+        timeout: 60
+        condition:
+          and:
+            - size: 1
+            - all:
+                status:
+                  conditions:
+                    - type: Ready
+                      status: "True"
+            - all:
+                spec:
+                  containers:
+                    - name: manager
+                      image: ${BLACKJACK_OPERATOR_IMAGE}

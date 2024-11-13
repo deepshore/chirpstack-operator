@@ -7,14 +7,15 @@ BUNDLE_IMAGE=chirpstack-operator-bundle:v0.1.0
 DOCKER_REGISTRY_PORT=5000
 DOCKER_REGISTRY_HOST=localhost
 DOCKER_REGISTRY=${DOCKER_REGISTRY_HOST}:${DOCKER_REGISTRY_PORT}
+REGISTRY_IP=$(kubectl -n kube-system get service registry -o jsonpath='{.spec.clusterIP}') &&
 
-olm_operator_running "${DOCKER_REGISTRY}/${OPERATOR_IMAGE}" ||
+olm_operator_running "${REGISTRY_IP}/${OPERATOR_IMAGE}" ||
 {
   start_minikube &&
   minikube addons enable registry &&
-  REGISTRY_IP=$(kubectl -n kube-system get service registry -o jsonpath='{.spec.clusterIP}') &&
   cd config/manager && kustomize edit set image chirpstack-operator=${REGISTRY_IP}/chirpstack-operator && cd ../.. &&
   rm -fr bundle* &&
+  operator-sdk generate kustomize manifests --package chirpstack-operator -q &&
   kustomize build config/manifests | operator-sdk generate bundle -q --overwrite --version 0.1.0 &&
   operator-sdk bundle validate ./bundle &&
   {
