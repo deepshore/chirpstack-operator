@@ -23,6 +23,9 @@ sha2 = "0.10.8"
 thiserror = "1.0.65"
 tokio = { version = "1.41.0", features = ["full"] }
 droperator = { path = "../droperator" }
+metrics = "0.24.0"
+metrics-exporter-prometheus = "0.16.0"
+rustls = { version = "0.23.16", features = ["ring"] }
 
 [lib]
 name = "chirpstack_operator"

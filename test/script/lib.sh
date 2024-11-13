@@ -31,6 +31,7 @@ olm_remove_operator()
 olm_install_olm()
 {
   olm_running || operator-sdk olm install --version v0.28.0
+  kubectl apply -f test/setup/prometheus.yaml
 }
 
 start_minikube()

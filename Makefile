@@ -32,6 +32,9 @@ push-images: image bundle-image
 deploy:
 	operator-sdk run bundle $(REGISTRY)/$(BUNDLE_IMAGE) --namespace operators --timeout 5m0s
 
+run:
+	RUST_LOG=debug cargo run --bin controller
+
 test-with-local-controller: config/crd/bases/applications.deepshore.de_chirpstacks.yaml
 	cargo build --bin controller
 	which blackjack || cargo install mrblackjack

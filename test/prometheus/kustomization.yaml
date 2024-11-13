@@ -1,0 +1,5 @@
+resources:
+  - namespace.yaml
+  - operator.yaml
+  - prometheus.yaml
+  - rbac.yaml

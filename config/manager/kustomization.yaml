@@ -2,3 +2,6 @@ resources:
 - manager.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+images:
+- name: chirpstack-operator
+  newName: 10.100.73.133/chirpstack-operator
