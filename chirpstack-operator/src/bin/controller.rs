@@ -253,7 +253,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .expect("Failed to install rustls crypto provider");
 
     PrometheusBuilder::new()
-        .with_http_listener(([0, 0, 0, 0], 8383))
+        .with_http_listener(([127, 0, 0, 1], 8383))
         .set_buckets(&[0.1, 0.5, 1.0, 3.0])?
         .install()?;
 

@@ -44,7 +44,7 @@ olm_install_operator()
   olm_operator_running "$1" || {
     start_minikube &&
     olm_install_olm &&
-    olm_remove_operator &&
+    { operator-sdk cleanup chirpstack-operator --namespace operators --delete-all 1>/dev/null 2>/dev/null || true; } &&
     operator-sdk run bundle --namespace operators --timeout 5m0s "$@"
   }
 }

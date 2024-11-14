@@ -55,4 +55,6 @@ test-with-olm-ghcr:
 
 clean:
 	rm -fr bundle*
+
+clean-minikube:
 	minikube delete

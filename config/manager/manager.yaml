@@ -39,8 +39,8 @@ spec:
       securityContext:
         runAsNonRoot: true
       containers:
-      - name: chirpstack-operator
-        image: chirpstack-operator:latest
-        imagePullPolicy: IfNotPresent
-      serviceAccountName: controller-manager
-      terminationGracePeriodSeconds: 10
+        - name: manager
+          image: chirpstack-operator:latest
+          imagePullPolicy: IfNotPresent
+        serviceAccountName: controller-manager
+        terminationGracePeriodSeconds: 10
