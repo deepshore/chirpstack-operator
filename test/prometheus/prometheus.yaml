@@ -8,12 +8,3 @@ spec:
   serviceMonitorSelector:
     matchLabels:
       control-plane: controller-manager
-  serviceMonitorNamespaceSelector: {}
-  resources:
-    requests:
-      memory: 400Mi
-  alerting:
-    alertmanagers:
-    - namespace: monitoring
-      name: alertmanager-main
-      port: web
