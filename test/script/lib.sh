@@ -74,8 +74,10 @@ olm_prepare_install_local_registry()
         docker push ${DOCKER_REGISTRY}/${OPERATOR_IMAGE} &&
         docker buildx build --tag ${DOCKER_REGISTRY}/${BUNDLE_IMAGE} -f bundle.Dockerfile . &&
         docker push ${DOCKER_REGISTRY}/${BUNDLE_IMAGE}
+        exit_code="$?"
 
         kill "$PID"
+        exit "$exit_code"
       }
     }
   }
@@ -100,7 +102,9 @@ olm_install_local_registry()
       kubectl port-forward --namespace kube-system service/registry ${DOCKER_REGISTRY_PORT}:80 > /dev/null &
       PID="$!"
       olm_install_operator ${DOCKER_REGISTRY}/${BUNDLE_IMAGE} --use-http
+      exit_code="$?"
       kill "$PID"
+      exit "$exit_code"
     }
   }
 }

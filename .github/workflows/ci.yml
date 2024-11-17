@@ -1,0 +1,57 @@
+name: Testing pipeline
+
+env:
+  MINIKUBE_CPUS: 4
+  MINKUBE_MEM: 4g
+
+on:
+  push:
+    branches: [ main, oxidized-chirpstack ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          components: rustfmt, clippy
+
+      - uses: manusa/actions-setup-minikube@v2.13.0
+        with:
+           minikube version: 'v1.34.0'
+           driver: docker
+           kubernetes version: 'v1.31.0'
+           github token: ${{ secrets.GITHUB_TOKEN }}
+           start args: "--addons registry --cpus=$MINIKUBE_CPUS --memory=$MINKUBE_MEM"
+
+      - uses: drmendes/setup-k8s-operator-sdk@v1.1.5
+        with:
+          version: "^1.37.0"
+
+      - uses: azure/setup-kubectl@v4
+        with:
+          version: 'v1.31.1'
+        id: install
+
+      - name: Test
+        run: make test-full
+
+      - name: Cleanup
+        if: always()
+        run: minikube stop
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-

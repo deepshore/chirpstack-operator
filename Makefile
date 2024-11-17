@@ -5,7 +5,6 @@ REGISTRY := ghcr.io/deepshore
 default: build
 
 build:
-	cargo build
 	cargo test
 
 image:
@@ -35,7 +34,7 @@ deploy:
 run:
 	RUST_LOG=debug cargo run --bin controller
 
-test-full: clean clean-minikube config/crd/bases/applications.deepshore.de_chirpstacks.yaml
+test-full: clean build config/crd/bases/applications.deepshore.de_chirpstacks.yaml
 	sh test/script/prepare-with-olm-local-registry.sh
 	which blackjack || cargo install mrblackjack
 	BLACKJACK_LOG_LEVEL=blackjack=debug blackjack --parallel $(MINIKUBE_CPUS) --timeout-scaling 2 test/blackjack
@@ -62,5 +61,4 @@ clean:
 	rm -fr bundle*
 
 clean-minikube:
-	minikube delete
-	docker system prune -a
+	minikube delete || true
