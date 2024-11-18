@@ -1,9 +1,13 @@
 type: cluster
 ordering: 01
+attempts: 2
 steps:
   - name: determine image name
     script:
       - ./export-image-name.sh
+  - name: install operator
+    script:
+      - ./install-via-olm.sh
   - name: check for operator
     watch:
       - name: operator
@@ -15,7 +19,7 @@ steps:
           control-plane: controller-manager
     wait:
       - target: operator
-        timeout: 60
+        timeout: 30
         condition:
           and:
             - size: 1

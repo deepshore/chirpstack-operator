@@ -46,15 +46,11 @@ jobs:
       - name: Cargo update
         run: cargo update
 
-      - name: Install operator
-        continue-on-error: true
-        run: sh test/script/setup-with-olm-local-registry.sh
-
-      - name: Verify install operator
-        run: sh test/script/setup-with-olm-local-registry.sh
+      - name: Prepare bundle
+        run: sh test/script/prepare-with-olm-local-registry.sh
 
       - name: Run tests
-        run: BLACKJACK_LOG_LEVEL=blackjack=debug blackjack --user-parallel $MINIKUBE_CPUS --cluster-parallel 1 --user-attempts 2 --cluster-attempts 2 --timeout-scaling 2 test/blackjack
+        run: BLACKJACK_LOG_LEVEL=blackjack=info blackjack --user-parallel $MINIKUBE_CPUS --cluster-parallel 1 --user-attempts 2 --cluster-attempts 2 --timeout-scaling 2 test/blackjack
 
       - name: Cleanup
         if: always()
