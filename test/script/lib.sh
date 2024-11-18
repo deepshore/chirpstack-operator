@@ -77,7 +77,7 @@ olm_prepare_install_local_registry()
         exit_code="$?"
 
         kill "$PID"
-        exit "$exit_code"
+        test "$exit_code" = "0"
       }
     }
   }
@@ -104,7 +104,7 @@ olm_install_local_registry()
       olm_install_operator ${DOCKER_REGISTRY}/${BUNDLE_IMAGE} --use-http
       exit_code="$?"
       kill "$PID"
-      exit "$exit_code"
+      test "$exit_code" = "0"
     }
   }
 }
