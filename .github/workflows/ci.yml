@@ -40,8 +40,21 @@ jobs:
           version: 'v1.31.1'
         id: install
 
-      - name: Test
-        run: make test-full
+      - name: Install blackjack
+        run: cargo install mrblackjack
+
+      - name: Cargo update
+        run: cargo update
+
+      - name: Install operator
+        continue-on-error: true
+        run: sh test/script/setup-with-olm-local-registry.sh
+
+      - name: Verify install operator
+        run: sh test/script/setup-with-olm-local-registry.sh
+
+      - name: Run tests
+        run: BLACKJACK_LOG_LEVEL=blackjack=debug blackjack --user-parallel $MINIKUBE_CPUS --cluster-parallel 1 --user-attempts 2 --cluster-attempts 2 --timeout-scaling 2 test/blackjack
 
       - name: Cleanup
         if: always()

@@ -2,17 +2,16 @@ OPERATOR_IMAGE := chirpstack-operator:latest
 BUNDLE_IMAGE := chirpstack-operator-bundle:v0.1.0
 REGISTRY := ghcr.io/deepshore
 
-default: build
+default: build config/crd/bases/applications.deepshore.de_chirpstacks.yaml
 
 build:
 	cargo test
 
+config/crd/bases/applications.deepshore.de_chirpstacks.yaml: chirpstack-operator/src/crd.rs
+	cargo run --bin make-crd-manifest | yq -o yaml -P > $@ || rm -f $@
+
 image:
 	docker buildx build --tag $(REGISTRY)/$(OPERATOR_IMAGE) -f Dockerfile .
-
-config/crd/bases/applications.deepshore.de_chirpstacks.yaml: chirpstack-operator/src/crd.rs
-	cargo build
-	cargo run --bin make-crd-manifest | yq -o yaml -P > $@ || rm -f $@
 
 bundle: config/crd/bases/applications.deepshore.de_chirpstacks.yaml
 	cd config/manager && kustomize edit set image chirpstack-operator=${REGISTRY}/chirpstack-operator

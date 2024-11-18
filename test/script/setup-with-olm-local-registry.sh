@@ -26,8 +26,11 @@ olm_operator_running "${REGISTRY_IP}/${OPERATOR_IMAGE}" ||
     docker buildx build --tag ${DOCKER_REGISTRY}/${BUNDLE_IMAGE} -f bundle.Dockerfile . &&
     docker push ${DOCKER_REGISTRY}/${BUNDLE_IMAGE} &&
     olm_install_operator ${DOCKER_REGISTRY}/${BUNDLE_IMAGE} --use-http
+    exit_code="$?"
 
     kill "$PID"
+
+    test "$exit_code" = "0"
   }
 } &&
 echo "Cluster+Operator running"

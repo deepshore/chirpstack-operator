@@ -1,9 +1,9 @@
 type: cluster
 ordering: 01
 steps:
-  - name: install olm
+  - name: determine image name
     script:
-      - ./install-with-olm-local-registry.sh
+      - ./export-image-name.sh
   - name: check for operator
     watch:
       - name: operator
