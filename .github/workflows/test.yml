@@ -1,4 +1,4 @@
-name: Testing pipeline
+name: Test
 
 env:
   MINIKUBE_CPUS: 4
@@ -6,16 +6,26 @@ env:
 
 on:
   push:
-    branches: [ main, oxidized-chirpstack ]
-  pull_request:
-    branches: [ main ]
+    branches:
+      - '*'
 
 jobs:
   test:
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - uses: actions-rs/toolchain@v1
         with:
@@ -40,27 +50,12 @@ jobs:
           version: 'v1.31.1'
         id: install
 
-      - name: Install blackjack
-        run: cargo install mrblackjack
-
-      - name: Cargo update
-        run: cargo update
-
-      - name: Prepare bundle
-        run: sh test/script/prepare-with-olm-local-registry.sh
+      - name: Prepare tests
+        run: make test-prepare-with-olm-local-registry
 
       - name: Run tests
-        run: BLACKJACK_LOG_LEVEL=blackjack=info blackjack --user-parallel $MINIKUBE_CPUS --cluster-parallel 1 --user-attempts 2 --cluster-attempts 2 --timeout-scaling 2 test/blackjack
+        run: make test-with-olm-local-registry
 
       - name: Cleanup
         if: always()
         run: minikube stop
-
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/registry
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-

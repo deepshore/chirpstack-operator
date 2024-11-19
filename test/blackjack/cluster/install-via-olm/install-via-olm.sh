@@ -2,4 +2,8 @@
 
 . ./lib.sh
 
-olm_install_local_registry || { sleep 10; olm_install_local_registry; }
+export VERSION="$(git describe --tags)"
+export OPERATOR_IMAGE="chirpstack-operator:${VERSION}"
+export BUNDLE_IMAGE="chirpstack-operator-bundle:${VERSION}"
+
+retry olm_install_local_registry

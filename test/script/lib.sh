@@ -1,5 +1,10 @@
 #!/bin/sh
 
+retry()
+{
+  $@ || { sleep 10; $@; }
+}
+
 minikube_running()
 {
   minikube status 2>/dev/null 1>/dev/null
@@ -42,9 +47,9 @@ olm_install_operator()
 {
   olm_operator_running "$1" || {
     start_minikube &&
-    olm_install_olm &&
+    retry olm_install_olm &&
     { operator-sdk cleanup chirpstack-operator --namespace operators --delete-all 1>/dev/null 2>/dev/null || true; } &&
-    operator-sdk run bundle --namespace operators --timeout 5m0s "$@"
+    retry operator-sdk run bundle --namespace operators --timeout 5m0s "$@"
   }
 }
 
@@ -52,8 +57,6 @@ olm_prepare_install_local_registry()
 {
   start_minikube &&
   minikube addons enable registry &&
-  OPERATOR_IMAGE=chirpstack-operator:latest &&
-  BUNDLE_IMAGE=chirpstack-operator-bundle:v0.1.0 &&
   DOCKER_REGISTRY_PORT=5000 &&
   DOCKER_REGISTRY_HOST=localhost &&
   DOCKER_REGISTRY=${DOCKER_REGISTRY_HOST}:${DOCKER_REGISTRY_PORT} &&
@@ -62,7 +65,9 @@ olm_prepare_install_local_registry()
   {
     olm_operator_running "${REGISTRY_IP}/${OPERATOR_IMAGE}" ||
     {
-      cd config/manager && kustomize edit set image chirpstack-operator=${REGISTRY_IP}/chirpstack-operator && cd ../.. &&
+      cd config/manager &&
+        kustomize edit set image chirpstack-operator=${REGISTRY_IP}/${OPERATOR_IMAGE} &&
+        cd ../.. &&
       rm -fr bundle* &&
       operator-sdk generate kustomize manifests --package chirpstack-operator -q &&
       kustomize build config/manifests | operator-sdk generate bundle -q --overwrite --version 0.1.0 &&
@@ -85,8 +90,6 @@ olm_prepare_install_local_registry()
 
 olm_install_local_registry()
 {
-  OPERATOR_IMAGE=chirpstack-operator:latest &&
-  BUNDLE_IMAGE=chirpstack-operator-bundle:v0.1.0 &&
   DOCKER_REGISTRY_PORT=5000 &&
   DOCKER_REGISTRY_HOST=localhost &&
   DOCKER_REGISTRY=${DOCKER_REGISTRY_HOST}:${DOCKER_REGISTRY_PORT} &&

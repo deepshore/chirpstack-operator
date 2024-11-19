@@ -2,8 +2,8 @@ use chirpstack_operator::{
     builder,
     crd::{types::WorkloadType, Chirpstack},
     k8s_helper::{apply_resource, delete_resource, find_and_delete},
-    status::{StatusHandler, StatusHandlerStatus},
     prometheus::create_prometheus_watcher,
+    status::{StatusHandler, StatusHandlerStatus},
 };
 use droperator::{
     config_index::ConfigIndex,
@@ -244,10 +244,37 @@ struct Context {
     crd_lock: ResourceLock,
 }
 
+build_info::build_info!(fn build_info_function);
+
+fn get_version_info_long() -> Option<String> {
+    let build_info = build_info_function();
+    Some(format!(
+        "{} v{} {} {}{}",
+        build_info.crate_info.name,
+        build_info.crate_info.version,
+        build_info.version_control.as_ref()?.git()?.branch.as_ref()?,
+        build_info.version_control.as_ref()?.git()?.commit_short_id,
+        if build_info.version_control.as_ref()?.git()?.dirty {
+            "!!!".to_string()
+        } else {
+            "".to_string()
+        },
+    ))
+}
+
+fn get_version_info_short() -> String {
+    let build_info = build_info_function();
+    format!(
+        "{} v{}",
+        build_info.crate_info.name,
+        build_info.crate_info.version,
+    )
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
-    log::info!("starting...");
+    log::info!("{}", get_version_info_long().or_else(|| Some(get_version_info_short())).unwrap());
 
     rustls::crypto::ring::default_provider()
         .install_default()
