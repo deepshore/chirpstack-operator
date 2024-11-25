@@ -48,7 +48,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: RUST_LOG
-              value: debug
+              value: info
         - name: kube-rbac-proxy
           securityContext:
             allowPrivilegeEscalation: false

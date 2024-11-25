@@ -30,12 +30,12 @@ config/crd/bases/applications.deepshore.de_chirpstacks.yaml: chirpstack-operator
 image: Cargo.lock
 	docker buildx build --tag $(REGISTRY)/$(OPERATOR_IMAGE) -f Dockerfile .
 
-bundle: config/crd/bases/applications.deepshore.de_chirpstacks.yaml
+bundle: config/crd/bases/applications.deepshore.de_chirpstacks.yaml Cargo.toml
 	cd config/manager && \
 		kustomize edit set image chirpstack-operator=$(REGISTRY)/$(OPERATOR_IMAGE)
 	operator-sdk generate kustomize manifests --package chirpstack-operator -q
 	kustomize build config/manifests | \
-		operator-sdk generate bundle -q --overwrite --version 0.1.0
+		operator-sdk generate bundle -q --overwrite --version $(subst v,,$(VERSION))
 	operator-sdk bundle validate ./bundle
 	echo \
 		"LABEL org.opencontainers.image.source=https://github.com/deepshore/chirpstack-operator.git" \
