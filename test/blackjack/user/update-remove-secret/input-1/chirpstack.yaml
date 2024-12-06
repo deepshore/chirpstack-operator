@@ -7,8 +7,9 @@ spec:
     configuration:
       configFiles:
         configMapName: config
-      envSecrets:
-        - env-secret-1
+      envFrom:
+        - secretRef:
+            name: env-secret-1
     service:
       port: 8080
       type: ClusterIP

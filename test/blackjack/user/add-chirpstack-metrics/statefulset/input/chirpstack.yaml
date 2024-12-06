@@ -10,9 +10,11 @@ spec:
         targetPort: 9090
       configFiles:
         configMapName: config
-      envSecrets:
-        - env-secret-1
-        - env-secret-2
+      envFrom:
+        - secretRef:
+            name: env-secret-1
+        - secretRef:
+            name: env-secret-2
     service:
       port: 8080
       type: ClusterIP

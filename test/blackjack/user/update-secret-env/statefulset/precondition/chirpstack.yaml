@@ -1,0 +1,43 @@
+apiVersion: applications.deepshore.de/v1alpha1
+kind: Chirpstack
+metadata:
+  name: test
+spec:
+  server:
+    configuration:
+      configFiles:
+        configMapName: config
+      env:
+        - name: CHIRPSTACK_POSTGRESQL_DSN_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: env-secret-1
+              key: POSTGRESQL_DSN_USERNAME
+        - name: CHIRPSTACK_POSTGRESQL_DSN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: env-secret-1
+              key: POSTGRESQL_DSN_PASSWORD
+        - name: CHIRPSTACK_API_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: env-secret-1
+              key: API_SECRET
+        - name: FOO_ENV
+          valueFrom:
+            secretKeyRef:
+              name: env-secret-2
+              key: FOO_ENV
+        - name: BAZ_ENV
+          valueFrom:
+            secretKeyRef:
+              name: env-secret-2
+              key: BAZ_ENV
+    service:
+      port: 8080
+      type: ClusterIP
+    workload:
+      type: statefulset
+      replicas: 3
+  restApi:
+    enabled: false

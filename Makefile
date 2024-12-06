@@ -22,7 +22,8 @@ build:
 	cargo test --color always 2>&1 | less -R
 
 run:
-	RUST_LOG=debug cargo run --bin controller
+	kubectl apply -k config/crd
+	RUST_LOG=info cargo run --bin controller
 
 config/crd/bases/applications.deepshore.de_chirpstacks.yaml: chirpstack-operator/src/crd.rs
 	cargo run --bin make-crd-manifest | yq -o yaml -P > $@ || rm -f $@

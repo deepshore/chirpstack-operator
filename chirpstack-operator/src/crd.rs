@@ -1,4 +1,7 @@
 use droperator::config_index::Config;
+use k8s_openapi::api::core::v1::{
+    ConfigMapKeySelector, EnvFromSource, EnvVar, EnvVarSource, SecretKeySelector,
+};
 pub use spec::Chirpstack;
 
 pub mod spec {
@@ -34,7 +37,8 @@ pub mod spec {
         }
 
         pub mod workload {
-            use super::super::super::types::{EnvVar, Image, KeyValue, WorkloadType};
+            use super::super::super::types::{Image, KeyValue, WorkloadType};
+            use k8s_openapi::api::core::v1::EnvVar;
             use schemars::JsonSchema;
             use serde::{Deserialize, Serialize};
 
@@ -98,6 +102,7 @@ pub mod spec {
 
         pub mod configuration {
             use super::super::super::types::{Certificate, ConfigFiles, ConfigMapName, Monitoring};
+            use k8s_openapi::api::core::v1::{EnvFromSource, EnvVar};
             use schemars::JsonSchema;
             use serde::{Deserialize, Serialize};
 
@@ -105,8 +110,8 @@ pub mod spec {
             #[serde(rename_all = "camelCase")]
             pub struct Configuration {
                 pub config_files: ConfigFiles,
-                #[serde(default)]
-                pub env_secrets: Vec<String>,
+                pub env: Option<Vec<EnvVar>>,
+                pub env_from: Option<Vec<EnvFromSource>>,
                 pub adr_plugin_files: Option<ConfigMapName>,
                 #[serde(default)]
                 pub certificates: Vec<Certificate>,
@@ -236,10 +241,10 @@ pub mod status {
 }
 
 pub mod types {
+    use k8s_openapi::apimachinery::pkg::util::intstr::IntOrString;
     use schemars::JsonSchema;
     use serde::{Deserialize, Serialize};
     use std::fmt;
-    use k8s_openapi::apimachinery::pkg::util::intstr::IntOrString;
 
     #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema, PartialEq)]
     #[serde(rename_all = "lowercase")]
@@ -261,13 +266,6 @@ pub mod types {
     #[serde(rename_all = "camelCase")]
     pub struct KeyValue {
         pub key: String,
-        pub value: String,
-    }
-
-    #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
-    #[serde(rename_all = "camelCase")]
-    pub struct EnvVar {
-        pub name: String,
         pub value: String,
     }
 
@@ -326,19 +324,42 @@ impl Config for Chirpstack {
         match &self.spec.server.configuration.adr_plugin_files {
             Some(adr_plugin_files) => names.push(adr_plugin_files.config_map_name.clone()),
             None => (),
-        }
+        };
+        if let Some(ref env_from) = self.spec.server.configuration.env_from {
+            for item in env_from {
+                match item {
+                    EnvFromSource {
+                        config_map_ref: Some(config_map_ref),
+                        ..
+                    } => names.push(config_map_ref.name.clone()),
+                    _ => {}
+                };
+            }
+        };
+        if let Some(ref env) = self.spec.server.configuration.env {
+            for item in env {
+                match item {
+                    EnvVar {
+                        value_from:
+                            Some(EnvVarSource {
+                                config_map_key_ref:
+                                    Some(ConfigMapKeySelector {
+                                        name: config_map_name,
+                                        ..
+                                    }),
+                                ..
+                            }),
+                        ..
+                    } => names.push(config_map_name.clone()),
+                    _ => {}
+                };
+            }
+        };
         names
     }
 
     fn get_secret_names(&self) -> Vec<String> {
-        let mut names: Vec<String> = self
-            .spec
-            .server
-            .configuration
-            .env_secrets
-            .iter()
-            .map(|name| name.clone())
-            .collect();
+        let mut names: Vec<String> = vec![];
         names.extend(
             self.spec
                 .server
@@ -347,6 +368,35 @@ impl Config for Chirpstack {
                 .iter()
                 .map(|cert| cert.secret_name.clone()),
         );
+        if let Some(ref env_from) = self.spec.server.configuration.env_from {
+            for item in env_from {
+                match item {
+                    EnvFromSource {
+                        secret_ref: Some(secret_ref),
+                        ..
+                    } => names.push(secret_ref.name.clone()),
+                    _ => {}
+                };
+            }
+        };
+        if let Some(ref env) = self.spec.server.configuration.env {
+            for item in env {
+                match item {
+                    EnvVar {
+                        value_from:
+                            Some(EnvVarSource {
+                                secret_key_ref:
+                                    Some(SecretKeySelector {
+                                        name: secret_name, ..
+                                    }),
+                                ..
+                            }),
+                        ..
+                    } => names.push(secret_name.clone()),
+                    _ => {}
+                };
+            }
+        };
         names
     }
 }

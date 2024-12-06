@@ -3,8 +3,8 @@ use crate::crd::Chirpstack;
 use droperator::metadata::MakeMetadata;
 use k8s_openapi::api::apps::v1::{Deployment, DeploymentSpec};
 use k8s_openapi::api::core::v1::{
-    ConfigMapVolumeSource, Container, ContainerPort, EnvFromSource, EnvVar, PodSpec,
-    PodTemplateSpec, SecretEnvSource, SecretVolumeSource, Volume, VolumeMount,
+    ConfigMapVolumeSource, Container, ContainerPort, EnvVar, PodSpec,
+    PodTemplateSpec, SecretVolumeSource, Volume, VolumeMount,
 };
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use std::collections::BTreeMap;
@@ -14,7 +14,6 @@ pub fn build(chirpstack: &Chirpstack, dependent_hash: String) -> Deployment {
 
     let metadata = chirpstack.make_metadata(None);
 
-    // Build pod labels
     let mut pod_labels = metadata.labels.clone();
     if !chirpstack.spec.server.workload.pod_labels.is_empty() {
         for label in &chirpstack.spec.server.workload.pod_labels {
@@ -22,7 +21,6 @@ pub fn build(chirpstack: &Chirpstack, dependent_hash: String) -> Deployment {
         }
     }
 
-    // Build pod annotations
     let mut pod_annotations = BTreeMap::new();
     if !chirpstack.spec.server.workload.pod_annotations.is_empty() {
         for annotation in &chirpstack.spec.server.workload.pod_annotations {
@@ -31,7 +29,6 @@ pub fn build(chirpstack: &Chirpstack, dependent_hash: String) -> Deployment {
     }
     pod_annotations.insert("dependent.resources.hash".to_string(), dependent_hash);
 
-    // Construct the container image
     let image = format!(
         "{}/{}:{}",
         chirpstack.spec.server.workload.image.registry,
@@ -39,7 +36,6 @@ pub fn build(chirpstack: &Chirpstack, dependent_hash: String) -> Deployment {
         chirpstack.spec.server.workload.image.tag
     );
 
-    // Build environment variables
     let mut env_vars = vec![EnvVar {
         name: "CHIRPSTACK_SERVER_POD_NAME".to_string(),
         value_from: Some(k8s_openapi::api::core::v1::EnvVarSource {
@@ -51,28 +47,18 @@ pub fn build(chirpstack: &Chirpstack, dependent_hash: String) -> Deployment {
         }),
         ..Default::default()
     }];
+    env_vars.append(&mut chirpstack.spec.server.workload.extra_env_vars.clone());
+    env_vars.append(
+        &mut chirpstack
+            .spec
+            .server
+            .configuration
+            .env
+            .clone()
+            .or_else(|| Some(vec![]))
+            .unwrap(),
+    );
 
-    for env in &chirpstack.spec.server.workload.extra_env_vars {
-        env_vars.push(EnvVar {
-            name: env.name.clone(),
-            value: Some(env.value.clone()),
-            ..Default::default()
-        });
-    }
-
-    // Build envFrom sources
-    let mut env_from = vec![];
-    for secret_name in &chirpstack.spec.server.configuration.env_secrets {
-        env_from.push(EnvFromSource {
-            secret_ref: Some(SecretEnvSource {
-                name: secret_name.clone(),
-                ..Default::default()
-            }),
-            ..Default::default()
-        });
-    }
-
-    // Build volume mounts
     let mut volume_mounts = vec![VolumeMount {
         name: "configuration-chirpstack".to_string(),
         mount_path: "/etc/chirpstack".to_string(),
@@ -104,30 +90,23 @@ pub fn build(chirpstack: &Chirpstack, dependent_hash: String) -> Deployment {
         });
     }
 
-    // Define container ports
     let ports = vec![ContainerPort {
         container_port: 8080,
         name: Some("web".to_string()),
         ..Default::default()
     }];
 
-    // Build the container
     let container = Container {
         name: "chirpstack".to_string(),
         image: Some(image),
         args: Some(vec!["-c".to_string(), "/etc/chirpstack".to_string()]),
         env: Some(env_vars),
-        env_from: if env_from.is_empty() {
-            None
-        } else {
-            Some(env_from)
-        },
+        env_from: chirpstack.spec.server.configuration.env_from.clone(),
         ports: Some(ports),
         volume_mounts: Some(volume_mounts),
         ..Default::default()
     };
 
-    // Build volumes
     let mut volumes = vec![Volume {
         name: "configuration-chirpstack".to_string(),
         config_map: Some(ConfigMapVolumeSource {
@@ -165,14 +144,12 @@ pub fn build(chirpstack: &Chirpstack, dependent_hash: String) -> Deployment {
         });
     }
 
-    // Build the PodSpec
     let pod_spec = PodSpec {
         containers: vec![container],
         volumes: Some(volumes),
         ..Default::default()
     };
 
-    // Build the PodTemplateSpec
     let pod_template_spec = PodTemplateSpec {
         metadata: Some(ObjectMeta {
             labels: Some(pod_labels),
@@ -186,7 +163,6 @@ pub fn build(chirpstack: &Chirpstack, dependent_hash: String) -> Deployment {
         spec: Some(pod_spec),
     };
 
-    // Build the DeploymentSpec
     let deployment_spec = DeploymentSpec {
         replicas: Some(chirpstack.spec.server.workload.replicas),
         selector: metadata.label_selector.clone(),
@@ -194,7 +170,6 @@ pub fn build(chirpstack: &Chirpstack, dependent_hash: String) -> Deployment {
         ..Default::default()
     };
 
-    // Assemble the Deployment
     Deployment {
         metadata: metadata.object_meta.clone(),
         spec: Some(deployment_spec),
