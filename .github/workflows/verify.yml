@@ -8,10 +8,12 @@ on:
   workflow_run:
     workflows: [Images]
     types: [completed]
-    branches: [staging/*]
+    branches: [main, staging/**]
 
 jobs:
-  on-success:
+  verify:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
     runs-on: ubuntu-latest
 
     steps:

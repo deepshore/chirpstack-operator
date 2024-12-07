@@ -4,3 +4,7 @@ kind: Kustomization
 resources:
 - ./manager.yaml
 - ./auth-proxy-service.yaml
+images:
+- name: chirpstack-operator
+  newName: ghcr.io/deepshore/chirpstack-operator
+  newTag: v0.3.1

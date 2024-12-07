@@ -1,0 +1,10 @@
+Schema: olm.semver
+GenerateMajorChannels: true
+GenerateMinorChannels: false
+Stable:
+  Bundles: []
+Fast:
+  Bundles: []
+Candidate:
+  Bundles:
+    - Image: ghcr.io/deepshore/chirpstack-operator-bundle:v0.3.1

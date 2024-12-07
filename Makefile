@@ -7,7 +7,7 @@ export BUNDLE_IMAGE := chirpstack-operator-bundle:$(VERSION)
 	test-prepare test-prepare-full test-prepare-with-local-controller \
 	test-prepare-with-olm-local-registry test-prepare-with-olm-ghcr-registry \
 	test-with-local-controller test-with-olm-local-registry test-with-olm-ghcr-registry \
-	clean clean-all
+	clean clean-all catalog
 
 export BLACKJACK_LOG_LEVEL ?= blackjack=info
 export BLACKJACK_SETTINGS ?= --user-parallel $(MINIKUBE_CPUS) --cluster-parallel 1 \
@@ -41,6 +41,12 @@ bundle: config/crd/bases/applications.deepshore.de_chirpstacks.yaml Cargo.toml
 	echo \
 		"LABEL org.opencontainers.image.source=https://github.com/deepshore/chirpstack-operator.git" \
 		>> bundle.Dockerfile
+
+update-catalog:
+	cd catalog && sh update-catalog.sh
+
+build-catalog-image:
+	cd catalog && sh build-catalog-image.sh
 
 bundle-image: bundle
 	docker buildx build --tag $(REGISTRY)/$(BUNDLE_IMAGE) -f bundle.Dockerfile .
