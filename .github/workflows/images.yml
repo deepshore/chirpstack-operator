@@ -8,11 +8,13 @@ on:
   workflow_run:
     workflows: [Test]
     types: [completed]
-    branches: [staging/**]
+    branches: [main, staging/**]
 
 jobs:
   on-success:
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
 
     steps:
       - uses: actions/cache@v4
@@ -45,6 +47,9 @@ jobs:
 
       - name: Build images
         run: make image bundle-image
+
+      - name: Log in to registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Push images
         run: make push-images
