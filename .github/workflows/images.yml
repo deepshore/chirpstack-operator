@@ -8,7 +8,7 @@ on:
   workflow_run:
     workflows: [Test]
     types: [completed]
-      #    branches: [staging/*]
+    branches: [staging/**]
 
 jobs:
   on-success:
