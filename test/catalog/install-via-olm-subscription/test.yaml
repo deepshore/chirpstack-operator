@@ -29,7 +29,7 @@ steps:
           control-plane: controller-manager
     apply:
       - path: input-sub
-        namespace-override: false
+        override-namespace: false
     wait:
       - target: operator
         timeout: 30

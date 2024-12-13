@@ -4,7 +4,7 @@ metadata:
   name: chirpstack-operator-v0-3-1-sub
   namespace: operators
 spec:
-  channel: Candidate
+  channel: candidate-v0
   installPlanApproval: Automatic
   name: chirpstack-operator
   source: chirpstack-operator-catalog

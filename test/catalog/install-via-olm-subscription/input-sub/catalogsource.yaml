@@ -5,6 +5,6 @@ metadata:
   namespace: operators
 spec:
   sourceType: grpc
-  image: ghcr.io/deepshore/chirpstack-operator-bundle:latest
+  image: ghcr.io/deepshore/chirpstack-operator-catalog:latest
   displayName: Chirpstack Operator
   publisher: deepshore.de

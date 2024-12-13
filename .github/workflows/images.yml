@@ -11,10 +11,11 @@ on:
     branches: [main, staging/**]
 
 jobs:
-  on-success:
+  images:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
     runs-on: ubuntu-latest
-    permissions:
-      packages: write
+    permissions: write-all
 
     steps:
       - uses: actions/cache@v4
