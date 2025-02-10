@@ -3,8 +3,8 @@ use crate::crd::Chirpstack;
 use droperator::metadata::MakeMetadata;
 use k8s_openapi::api::apps::v1::{Deployment, DeploymentSpec};
 use k8s_openapi::api::core::v1::{
-    ConfigMapVolumeSource, Container, ContainerPort, EnvVar, PodSpec,
-    PodTemplateSpec, SecretVolumeSource, Volume, VolumeMount,
+    ConfigMapVolumeSource, Container, ContainerPort, EnvVar, PodSpec, PodTemplateSpec,
+    SecretVolumeSource, Volume, VolumeMount,
 };
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use std::collections::BTreeMap;

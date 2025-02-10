@@ -15,8 +15,7 @@ pub trait MakeMetadata<T> {
     fn make_metadata(&self, describer: Option<String>) -> Metadata;
 }
 
-impl<T: CustomResourceExt + ResourceExt + Resource<DynamicType = ()>> MakeMetadata<T> for T
-{
+impl<T: CustomResourceExt + ResourceExt + Resource<DynamicType = ()>> MakeMetadata<T> for T {
     fn make_metadata(&self, describer: Option<String>) -> Metadata {
         let describer_string = if let Some(d) = describer {
             format!("-{}", d)
@@ -69,9 +68,9 @@ impl<T: CustomResourceExt + ResourceExt + Resource<DynamicType = ()>> MakeMetada
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde::{Deserialize, Serialize};
     use kube_derive::CustomResource;
     use schemars::JsonSchema;
+    use serde::{Deserialize, Serialize};
 
     #[derive(CustomResource, Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
     #[kube(
@@ -101,10 +100,16 @@ mod tests {
         expected_labels.insert("app".to_string(), metadata.app_name.clone());
         assert_eq!(metadata.labels, expected_labels);
 
-        assert_eq!(metadata.label_selector.match_labels, Some(expected_labels.clone()));
+        assert_eq!(
+            metadata.label_selector.match_labels,
+            Some(expected_labels.clone())
+        );
 
         assert_eq!(metadata.object_meta.name, Some(metadata.app_name.clone()));
-        assert_eq!(metadata.object_meta.namespace, Some("test-namespace".to_string()));
+        assert_eq!(
+            metadata.object_meta.namespace,
+            Some("test-namespace".to_string())
+        );
         assert_eq!(metadata.object_meta.labels, Some(expected_labels.clone()));
 
         let owner_refs = metadata.object_meta.owner_references.unwrap();
@@ -134,10 +139,16 @@ mod tests {
         expected_labels.insert("app".to_string(), metadata.app_name.clone());
         assert_eq!(metadata.labels, expected_labels);
 
-        assert_eq!(metadata.label_selector.match_labels, Some(expected_labels.clone()));
+        assert_eq!(
+            metadata.label_selector.match_labels,
+            Some(expected_labels.clone())
+        );
 
         assert_eq!(metadata.object_meta.name, Some(metadata.app_name.clone()));
-        assert_eq!(metadata.object_meta.namespace, Some("test-namespace".to_string()));
+        assert_eq!(
+            metadata.object_meta.namespace,
+            Some("test-namespace".to_string())
+        );
         assert_eq!(metadata.object_meta.labels, Some(expected_labels.clone()));
 
         let owner_refs = metadata.object_meta.owner_references.unwrap();

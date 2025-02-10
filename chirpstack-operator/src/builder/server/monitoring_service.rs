@@ -1,10 +1,16 @@
-use crate::crd::{spec::Chirpstack};
-use k8s_openapi::api::core::v1::{Service, ServicePort, ServiceSpec};
+use crate::crd::spec::Chirpstack;
 use droperator::metadata::MakeMetadata;
+use k8s_openapi::api::core::v1::{Service, ServicePort, ServiceSpec};
 
 pub fn build(chirpstack: &Chirpstack) -> Service {
     let metadata = chirpstack.make_metadata(Some("metrics".to_string()));
-    let monitoring = chirpstack.spec.server.configuration.monitoring.clone().unwrap_or_default();
+    let monitoring = chirpstack
+        .spec
+        .server
+        .configuration
+        .monitoring
+        .clone()
+        .unwrap_or_default();
 
     let ports = vec![ServicePort {
         port: monitoring.port,

@@ -1,14 +1,14 @@
-use crate::{crd::Chirpstack};
-use droperator::metadata::MakeMetadata;
+use crate::crd::Chirpstack;
 use droperator::error::Error;
+use droperator::metadata::MakeMetadata;
 use kube::{
     api::{DeleteParams, ListParams, Patch, PatchParams, PostParams},
     core::{NamespaceResourceScope, Resource},
     Api, Client, ResourceExt,
 };
+use metrics::counter;
 use serde::{de::DeserializeOwned, Serialize};
 use std::fmt::Debug;
-use metrics::{counter};
 
 const CONTROLLER_NAME: &str = "chirpstack-controller";
 

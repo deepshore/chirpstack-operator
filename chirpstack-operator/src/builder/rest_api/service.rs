@@ -1,5 +1,5 @@
-use droperator::metadata::MakeMetadata;
 use crate::crd::{spec::Chirpstack, types::ServiceType};
+use droperator::metadata::MakeMetadata;
 use k8s_openapi::api::core::v1::{Service, ServicePort, ServiceSpec};
 
 pub fn build(chirpstack: &Chirpstack) -> Service {

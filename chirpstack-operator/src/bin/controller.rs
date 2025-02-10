@@ -253,7 +253,12 @@ fn get_version_info_long() -> Option<String> {
         "{} v{} {} {}{}",
         build_info.crate_info.name,
         build_info.crate_info.version,
-        build_info.version_control.as_ref()?.git()?.branch.as_ref()?,
+        build_info
+            .version_control
+            .as_ref()?
+            .git()?
+            .branch
+            .as_ref()?,
         build_info.version_control.as_ref()?.git()?.commit_short_id,
         if build_info.version_control.as_ref()?.git()?.dirty {
             "!!!".to_string()
@@ -267,15 +272,19 @@ fn get_version_info_short() -> String {
     let build_info = build_info_function();
     format!(
         "{} v{}",
-        build_info.crate_info.name,
-        build_info.crate_info.version,
+        build_info.crate_info.name, build_info.crate_info.version,
     )
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
-    log::info!("{}", get_version_info_long().or_else(|| Some(get_version_info_short())).unwrap());
+    log::info!(
+        "{}",
+        get_version_info_long()
+            .or_else(|| Some(get_version_info_short()))
+            .unwrap()
+    );
 
     rustls::crypto::ring::default_provider()
         .install_default()

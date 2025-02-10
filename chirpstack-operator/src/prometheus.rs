@@ -1,16 +1,19 @@
 use droperator::error::Error;
-use kube::api::{Api, DynamicObject, PatchParams, Patch};
+use kube::api::{Api, DynamicObject, Patch, PatchParams};
 use kube::core::{ApiResource, GroupVersionKind};
 use kube::{Client, ResourceExt};
-use std::env;
 use serde::Deserialize;
 use serde_yaml::Value;
+use std::env;
 use tokio::time::{sleep, Duration};
 
 const SERVICEMONITOR_YAML: &str = include_str!("assets/service_monitor.yaml");
 
 async fn apply_service_monitor(client: Client, namespace: String) -> Result<(), Error> {
-    let yaml_str = serde_yaml::Deserializer::from_str(SERVICEMONITOR_YAML).into_iter().next().unwrap();
+    let yaml_str = serde_yaml::Deserializer::from_str(SERVICEMONITOR_YAML)
+        .into_iter()
+        .next()
+        .unwrap();
     let yaml_value: Value = Value::deserialize(yaml_str)?;
     let mut dynamic_obj: DynamicObject = serde_yaml::from_value(yaml_value)?;
     let gvk = GroupVersionKind::try_from(dynamic_obj.types.clone().unwrap_or_default())?;
