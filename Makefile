@@ -31,7 +31,7 @@ config/crd/bases/applications.deepshore.de_chirpstacks.yaml: chirpstack-operator
 	cargo run --bin make-crd-manifest | yq -o yaml -P > $@ || rm -f $@
 
 image: Cargo.lock
-	docker buildx build --tag $(REGISTRY)/$(OPERATOR_IMAGE) -f Dockerfile .
+	docker buildx build --tag $(REGISTRY)/$(OPERATOR_IMAGE) --platform linux/amd64,linux/arm64 -f Dockerfile .
 
 bundle: config/crd/bases/applications.deepshore.de_chirpstacks.yaml Cargo.toml
 	cd config/manager && \
@@ -45,7 +45,7 @@ bundle: config/crd/bases/applications.deepshore.de_chirpstacks.yaml Cargo.toml
 		>> bundle.Dockerfile
 
 bundle-image: bundle
-	docker buildx build --tag $(REGISTRY)/$(BUNDLE_IMAGE) -f bundle.Dockerfile .
+	docker buildx build --tag $(REGISTRY)/$(BUNDLE_IMAGE) --platform linux/amd64,linux/arm64 -f bundle.Dockerfile .
 
 push-images: image bundle-image
 	docker push $(REGISTRY)/$(OPERATOR_IMAGE)
