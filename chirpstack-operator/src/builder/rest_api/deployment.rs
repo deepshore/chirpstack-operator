@@ -1,10 +1,11 @@
-use droperator::metadata::MakeMetadata;
 use crate::crd::spec::Chirpstack;
+use droperator::metadata::MakeMetadata;
 use k8s_openapi::api::apps::v1::{Deployment, DeploymentSpec};
+use k8s_openapi::api::core::v1::Service;
 use k8s_openapi::api::core::v1::{Container, ContainerPort, PodSpec, PodTemplateSpec};
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 
-pub fn build(chirpstack: &Chirpstack) -> Deployment {
+pub fn build(chirpstack: &Chirpstack, chirpstack_service: &Service) -> Deployment {
     let metadata = chirpstack.make_metadata(Some("rest-api".to_string()));
 
     // Get workload and configuration
@@ -22,7 +23,11 @@ pub fn build(chirpstack: &Chirpstack) -> Deployment {
         "--server".to_string(),
         format!(
             "{}:{}",
-            metadata.app_name.clone(),
+            chirpstack_service
+                .metadata
+                .name
+                .clone()
+                .unwrap_or_else(|| "service-name-missing".to_string()),
             chirpstack.spec.server.service.port
         ),
         "--bind".to_string(),

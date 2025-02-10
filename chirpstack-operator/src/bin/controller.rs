@@ -68,11 +68,8 @@ async fn apply(
             .await
         }
     }?;
-    apply_resource(
-        &client,
-        &builder::server::service::build(chirpstack.as_ref()),
-    )
-    .await?;
+    let chirpstack_service = builder::server::service::build(chirpstack.as_ref());
+    apply_resource(&client, &chirpstack_service).await?;
     apply_resource(
         &client,
         &builder::server::service_account::build(chirpstack.as_ref()),
@@ -80,20 +77,24 @@ async fn apply(
     .await?;
 
     if chirpstack.spec.rest_api.enabled {
-        apply_resource(
-            &client,
-            &builder::rest_api::deployment::build(chirpstack.as_ref()),
-        )
-        .await?;
-        apply_resource(
-            &client,
-            &builder::rest_api::service::build(chirpstack.as_ref()),
-        )
-        .await?;
+        if chirpstack_service.metadata.name.is_some() {
+            apply_resource(
+                &client,
+                &builder::rest_api::deployment::build(chirpstack.as_ref(), &chirpstack_service),
+            )
+            .await?;
+            apply_resource(
+                &client,
+                &builder::rest_api::service::build(chirpstack.as_ref()),
+            )
+            .await?;
+        } else {
+            log::error!("unable to create rest-api: chirpstack service has no name");
+        }
     } else {
         delete_resource(
             &client,
-            &builder::rest_api::deployment::build(chirpstack.as_ref()),
+            &builder::rest_api::deployment::build(chirpstack.as_ref(), &chirpstack_service),
         )
         .await?;
         delete_resource(
