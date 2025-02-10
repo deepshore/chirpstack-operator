@@ -31,9 +31,6 @@ spec:
     configuration:
       configFiles:
         configMapName: chirpstack-config
-      envSecrets:
-        - chirpstack-env-secret-1
-        - chirpstack-env-secret-2
       certificates:
         - name: cert-1
           secretName: chirpstack-cert-1
@@ -42,4 +39,4 @@ spec:
       adrPluginFiles:
         configMapName: chirpstack-adr-plugin-files
   restApi:
-    enabled: false
+    enabled: true

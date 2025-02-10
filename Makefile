@@ -2,6 +2,8 @@ export REGISTRY := ghcr.io/deepshore
 export VERSION ?= $(shell git describe --tags)
 export OPERATOR_IMAGE := chirpstack-operator:$(VERSION)
 export BUNDLE_IMAGE := chirpstack-operator-bundle:$(VERSION)
+export MINIKUBE_CPUS ?= 4
+export MINIKUBE_MEM ?= 2GB
 
 .PHONY: build run image bundle-image push-images deploy install-blackjack \
 	test-prepare test-prepare-full test-prepare-with-local-controller \
