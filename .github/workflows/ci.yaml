@@ -1,0 +1,157 @@
+name: CI
+
+env:
+  MINIKUBE_CPUS: 4
+  MINKUBE_MEM: 4g
+
+on:
+  push:
+    branches:
+      - "**"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          components: rustfmt, clippy
+
+      - uses: manusa/actions-setup-minikube@v2.13.0
+        with:
+           minikube version: 'v1.34.0'
+           driver: docker
+           kubernetes version: 'v1.31.0'
+           github token: ${{ secrets.GITHUB_TOKEN }}
+           start args: "--addons registry --cpus=$MINIKUBE_CPUS --memory=$MINKUBE_MEM"
+
+      - uses: drmendes/setup-k8s-operator-sdk@v1.1.5
+        with:
+          version: "^1.37.0"
+
+      - uses: azure/setup-kubectl@v4
+        with:
+          version: 'v1.31.1'
+        id: install
+
+      - name: Prepare tests
+        run: make test-prepare-with-olm-local-registry
+
+      - name: Run tests
+        run: make test-with-olm-local-registry
+
+      - name: Cleanup
+        if: always()
+        run: minikube stop
+
+  images:
+    needs: [ "test" ]
+    if: startsWith(github.ref, 'refs/heads/staging/') || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions: write-all
+
+    steps:
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          components: rustfmt, clippy
+
+      - uses: drmendes/setup-k8s-operator-sdk@v1.1.5
+        with:
+          version: "^1.37.0"
+
+      - uses: azure/setup-kubectl@v4
+        with:
+          version: 'v1.31.1'
+        id: install
+
+      - name: Build images
+        run: make image bundle-image
+
+      - name: Log in to registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Push images
+        run: make push-images
+
+  verify:
+    needs: [ "images" ]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          components: rustfmt, clippy
+
+      - uses: manusa/actions-setup-minikube@v2.13.0
+        with:
+           minikube version: 'v1.34.0'
+           driver: docker
+           kubernetes version: 'v1.31.0'
+           github token: ${{ secrets.GITHUB_TOKEN }}
+           start args: "--addons registry --cpus=$MINIKUBE_CPUS --memory=$MINKUBE_MEM"
+
+      - uses: drmendes/setup-k8s-operator-sdk@v1.1.5
+        with:
+          version: "^1.37.0"
+
+      - uses: azure/setup-kubectl@v4
+        with:
+          version: 'v1.31.1'
+        id: install
+
+      - name: Prepare tests
+        run: make test-prepare-with-olm-ghcr-registry
+
+      - name: Run tests
+        run: make test-with-olm-ghcr-registry
+
+      - name: Cleanup
+        if: always()
+        run: minikube stop

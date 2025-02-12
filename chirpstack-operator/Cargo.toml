@@ -1,6 +1,6 @@
 [package]
 name = "chirpstack-operator"
-version = "0.3.2"
+version = "0.3.3"
 authors = ["Ole Kliemann <mail@olekliemann.de>", "Malte Groth <malte.groth@deepshore.de>"]
 edition = "2021"
 
