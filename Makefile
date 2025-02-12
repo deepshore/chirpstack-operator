@@ -5,6 +5,7 @@ export BUNDLE_IMAGE := chirpstack-operator-bundle:$(VERSION)
 export MINIKUBE_CPUS ?= 4
 export MINIKUBE_MEM ?= 2GB
 
+
 .PHONY: build run image bundle-image push-images deploy install-blackjack \
 	test-prepare test-prepare-full test-prepare-with-local-controller \
 	test-prepare-with-olm-local-registry test-prepare-with-olm-ghcr-registry \
