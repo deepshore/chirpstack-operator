@@ -37,7 +37,7 @@ pub mod spec {
         }
 
         pub mod workload {
-            use super::super::super::types::{Image, KeyValue, WorkloadType};
+            use super::super::super::types::{Image, ImagePullPolicy, KeyValue, WorkloadType};
             use k8s_openapi::api::core::v1::EnvVar;
             use schemars::JsonSchema;
             use serde::{Deserialize, Serialize};
@@ -56,6 +56,8 @@ pub mod spec {
                 pub pod_labels: Vec<KeyValue>,
                 #[serde(default)]
                 pub extra_env_vars: Vec<EnvVar>,
+                #[serde(default)]
+                pub image_pull_policy: ImagePullPolicy,
             }
 
             fn default_image() -> Image {
@@ -260,6 +262,21 @@ pub mod types {
         pub registry: String,
         pub repository: String,
         pub tag: String,
+    }
+
+    #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema, PartialEq)]
+    #[serde(rename_all = "PascalCase")]
+    pub enum ImagePullPolicy {
+        #[default]
+        Always,
+        IfNotPresent,
+        Never,
+    }
+
+    impl fmt::Display for ImagePullPolicy {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "{self:?}")
+        }
     }
 
     #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
