@@ -357,6 +357,13 @@ spec:
                             - repository
                             - tag
                           type: object
+                        imagePullPolicy:
+                          default: Always
+                          enum:
+                            - Always
+                            - IfNotPresent
+                            - Never
+                          type: string
                         podAnnotations:
                           default: []
                           items:

@@ -36,6 +36,12 @@ pub fn build(chirpstack: &Chirpstack, dependent_hash: String) -> Deployment {
         chirpstack.spec.server.workload.image.tag
     );
 
+    let image_pull_policy = chirpstack
+        .spec
+        .server
+        .workload
+        .image_pull_policy.to_string();
+
     let mut env_vars = vec![EnvVar {
         name: "CHIRPSTACK_SERVER_POD_NAME".to_string(),
         value_from: Some(k8s_openapi::api::core::v1::EnvVarSource {
@@ -104,6 +110,7 @@ pub fn build(chirpstack: &Chirpstack, dependent_hash: String) -> Deployment {
         env_from: chirpstack.spec.server.configuration.env_from.clone(),
         ports: Some(ports),
         volume_mounts: Some(volume_mounts),
+        image_pull_policy: Some(image_pull_policy),
         ..Default::default()
     };
 
