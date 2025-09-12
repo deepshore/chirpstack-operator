@@ -166,7 +166,7 @@ pub fn build(chirpstack: &Chirpstack, dependent_hash: String) -> StatefulSet {
     let statefulset_spec = StatefulSetSpec {
         replicas: Some(chirpstack.spec.server.workload.replicas),
         selector: metadata.label_selector.clone(),
-        service_name: metadata.app_name.clone(),
+        service_name: Some(metadata.app_name.clone()),
         template: pod_template_spec,
         ..Default::default()
     };
