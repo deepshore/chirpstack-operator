@@ -5,6 +5,3 @@ resources:
   - service_account.yaml
   - role.yaml
   - role_binding.yaml
-  - auth_proxy_client_clusterrole.yaml
-  - auth_proxy_role_binding.yaml
-  - auth_proxy_role.yaml
