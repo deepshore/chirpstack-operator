@@ -1,4 +1,4 @@
-FROM rust:1.82 AS builder
+FROM rust:1.88 AS builder
 
 ENV CARGO_HOME=/usr/local/cargo
 ENV RUSTUP_HOME=/usr/local/rustup
